@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logo.png" alt="ACIES" width="380">
+<img src="assets/logo.svg" alt="ACIES" width="380">
 
 # ACIES
 

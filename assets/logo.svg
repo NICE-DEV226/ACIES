@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Outer dashed circle — actions possibles -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#1a1a2e" stroke-width="1.5" stroke-dasharray="8,6" opacity="0.6"/>
+
+  <!-- Middle solid circle — sélection adaptive -->
+  <circle cx="256" cy="256" r="130" fill="none" stroke="#1a1a2e" stroke-width="2" opacity="0.8"/>
+
+  <!-- Inner thick ring — noyau protégé (4 segments) -->
+  <path d="M256,186 A70,70 0 0,1 326,256" fill="none" stroke="#1a1a2e" stroke-width="30" stroke-linecap="round"/>
+  <path d="M326,256 A70,70 0 0,1 256,326" fill="none" stroke="#1a1a2e" stroke-width="30" stroke-linecap="round"/>
+  <path d="M256,326 A70,70 0 0,1 186,256" fill="none" stroke="#1a1a2e" stroke-width="30" stroke-linecap="round"/>
+  <path d="M186,256 A70,70 0 0,1 256,186" fill="none" stroke="#1a1a2e" stroke-width="30" stroke-linecap="round"/>
+
+  <!-- Crosshair — précision -->
+  <line x1="56" y1="256" x2="456" y2="256" stroke="#1a1a2e" stroke-width="0.8" opacity="0.3"/>
+  <line x1="256" y1="56" x2="256" y2="456" stroke="#1a1a2e" stroke-width="0.8" opacity="0.3"/>
+
+  <!-- Centre — noyau intelligent -->
+  <circle cx="256" cy="256" r="40" fill="#00d4aa"/>
+
+  <!-- Turquoise adaptive paths — sélection en temps réel -->
+  <line x1="256" y1="256" x2="348" y2="164" stroke="#00d4aa" stroke-width="2.5" opacity="0.9"/>
+  <line x1="256" y1="256" x2="176" y2="344" stroke="#00d4aa" stroke-width="2" opacity="0.7"/>
+  <line x1="256" y1="256" x2="370" y2="220" stroke="#00d4aa" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Outer nodes — actions possibles -->
+  <circle cx="256" cy="56" r="8" fill="#1a1a2e"/>
+  <circle cx="456" cy="256" r="7" fill="#1a1a2e"/>
+  <circle cx="256" cy="456" r="8" fill="#1a1a2e"/>
+  <circle cx="56" cy="256" r="6" fill="none" stroke="#1a1a2e" stroke-width="2"/>
+  <circle cx="380" cy="118" r="5" fill="none" stroke="#1a1a2e" stroke-width="1.5"/>
+
+  <!-- Middle nodes — sélection adaptive -->
+  <circle cx="256" cy="126" r="6" fill="#1a1a2e"/>
+  <circle cx="348" cy="164" r="7" fill="#00d4aa"/>
+  <circle cx="386" cy="256" r="5" fill="none" stroke="#1a1a2e" stroke-width="2"/>
+  <circle cx="320" cy="346" r="6" fill="#1a1a2e"/>
+  <circle cx="192" cy="346" r="5" fill="none" stroke="#1a1a2e" stroke-width="1.5"/>
+  <circle cx="126" cy="256" r="6" fill="#1a1a2e"/>
+  <circle cx="176" cy="166" r="5" fill="none" stroke="#1a1a2e" stroke-width="1.5"/>
+  <circle cx="176" cy="344" r="7" fill="#00d4aa"/>
+
+  <!-- Inner nodes — noyau -->
+  <circle cx="296" cy="220" r="5" fill="#1a1a2e"/>
+  <circle cx="220" cy="296" r="4" fill="none" stroke="#1a1a2e" stroke-width="1.5"/>
+  <circle cx="370" cy="220" r="6" fill="#00d4aa" opacity="0.7"/>
+</svg>
