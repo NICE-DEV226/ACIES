@@ -8,6 +8,10 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write
+  id-token: write
+
 jobs:
   # ─────────────────────────────────────────────
   # Job 1: Python Tests
@@ -171,9 +175,11 @@ jobs:
         run: pip install build && python -m build --wheel
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            acies-cli-linux-amd64
-            acies-cli-darwin-amd64
-            dist/*.whl
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            acies-cli-linux-amd64 \
+            acies-cli-darwin-amd64 \
+            dist/*.whl \
+            --clobber
