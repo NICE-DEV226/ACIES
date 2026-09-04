@@ -69,6 +69,20 @@ cd ACIES
 
 No external dependencies — ACIES uses only the Python standard library.
 
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Installation](docs/installation.md) | Setup guide for Python, Go, C++, Docker |
+| [Architecture](docs/architecture.md) | Deep dive into the control loop and algorithms |
+| [Configuration](docs/configuration.md) | All configuration parameters |
+| [CLI Reference](docs/cli-reference.md) | Go CLI commands and flags |
+| [Python API](docs/python-api.md) | Complete Python API reference |
+| [C++ API](docs/cpp-api.md) | C API for FFI (Python/Go/Rust) |
+| [Examples](docs/examples.md) | 10 usage examples |
+| [Benchmarks](docs/benchmarks.md) | Performance results on MNIST |
+| [Contributing](docs/contributing.md) | Development guide |
+
 ## Quick Start
 
 ```python
