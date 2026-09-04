@@ -2,7 +2,6 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
 *.egg-info/
 dist/
 build/
@@ -14,6 +13,10 @@ cpp/*.so
 
 # Go binary
 acies-cli
+
+# Data archives
+data/*.zip
+data/*.png
 
 # Virtual environments
 venv/
