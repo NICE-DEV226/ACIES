@@ -107,23 +107,11 @@ python3 test_apc.py          # 8/8 tests
 
 ## Architecture
 
-```
-                        ┌─────────────────────────────┐
-          input ──────▶ │       APCController          │
-                        │                              │
-                        │  BeliefState ──▶ Clarity     │
-                        │  (Bayesian)      (Thompson)  │
-                        │       │              │       │
-                        │  Conviction ◀── ChangePoint  │
-                        │  (anti-oscill)  (shift det.) │
-                        │                              │
-                        │  SafetyLayer ──▶ ActionSpace │
-                        │  (risk guard)    (ΔR/C score)│
-                        └──────────────┬──────────────┘
-                                       │
-                                       ▼
-                              decision + confidence
-```
+<div align="center">
+
+<img src="assets/architecture.svg" alt="ACIES Architecture" width="700">
+
+</div>
 
 **Control loop:** Sample → Score (ΔR/C) → Adjust → Filter → Execute → Observe → Update → Repeat
 

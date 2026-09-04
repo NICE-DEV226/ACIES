@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" width="800" height="520">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1a1a2e"/>
+    </marker>
+    <marker id="arrow-turq" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#00d4aa"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="35" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="18" font-weight="700" fill="#1a1a2e">Architecture</text>
+
+  <!-- Input -->
+  <text x="80" y="100" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="13" fill="#666">input</text>
+  <line x1="80" y1="108" x2="80" y2="140" stroke="#1a1a2e" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Main box -->
+  <rect x="130" y="60" width="540" height="380" rx="12" fill="none" stroke="#1a1a2e" stroke-width="2"/>
+  <text x="400" y="90" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#1a1a2e">APCController</text>
+
+  <!-- BeliefState -->
+  <rect x="170" y="120" width="140" height="55" rx="8" fill="#f0f0f5" stroke="#1a1a2e" stroke-width="1.5"/>
+  <text x="240" y="145" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="12" font-weight="600" fill="#1a1a2e">BeliefState</text>
+  <text x="240" y="162" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="10" fill="#666">Bayesian filter</text>
+
+  <!-- ClarityLearner -->
+  <rect x="340" y="120" width="140" height="55" rx="8" fill="#f0f0f5" stroke="#1a1a2e" stroke-width="1.5"/>
+  <text x="410" y="145" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="12" font-weight="600" fill="#1a1a2e">ClarityLearner</text>
+  <text x="410" y="162" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="10" fill="#666">Thompson Sampling</text>
+
+  <!-- SafetyLayer -->
+  <rect x="510" y="120" width="140" height="55" rx="8" fill="#f0f0f5" stroke="#1a1a2e" stroke-width="1.5"/>
+  <text x="580" y="145" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="12" font-weight="600" fill="#1a1a2e">SafetyLayer</text>
+  <text x="580" y="162" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="10" fill="#666">risk guard</text>
+
+  <!-- Conviction -->
+  <rect x="170" y="220" width="140" height="55" rx="8" fill="#f0f0f5" stroke="#1a1a2e" stroke-width="1.5"/>
+  <text x="240" y="245" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="12" font-weight="600" fill="#1a1a2e">Conviction</text>
+  <text x="240" y="262" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="10" fill="#666">anti-oscillation</text>
+
+  <!-- ChangePoint -->
+  <rect x="340" y="220" width="140" height="55" rx="8" fill="#f0f0f5" stroke="#1a1a2e" stroke-width="1.5"/>
+  <text x="410" y="245" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="12" font-weight="600" fill="#1a1a2e">ChangePoint</text>
+  <text x="410" y="262" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="10" fill="#666">shift detection</text>
+
+  <!-- Arrows row 1 -->
+  <line x1="310" y1="147" x2="340" y2="147" stroke="#1a1a2e" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="480" y1="147" x2="510" y2="147" stroke="#1a1a2e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Arrows Belief → Conviction (down) -->
+  <line x1="240" y1="175" x2="240" y2="220" stroke="#1a1a2e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Arrows Clarity → ChangePoint (down) -->
+  <line x1="410" y1="175" x2="410" y2="220" stroke="#1a1a2e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Arrows Conviction → ChangePoint (horizontal) -->
+  <line x1="310" y1="247" x2="340" y2="247" stroke="#1a1a2e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Action Space box -->
+  <rect x="170" y="320" width="480" height="60" rx="8" fill="#1a1a2e"/>
+  <text x="410" y="348" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="13" font-weight="600" fill="white">Action Space</text>
+  <text x="410" y="367" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="11" fill="#aaa">64p · 128p · 224p · 320p · 512p · 1024p · crop_224 · crop_320 · crop_512</text>
+
+  <!-- Arrows row 2 → Action Space -->
+  <line x1="240" y1="275" x2="240" y2="320" stroke="#00d4aa" stroke-width="2" marker-end="url(#arrow-turq)"/>
+  <line x1="410" y1="275" x2="410" y2="320" stroke="#00d4aa" stroke-width="2" marker-end="url(#arrow-turq)"/>
+  <line x1="580" y1="175" x2="580" y2="320" stroke="#00d4aa" stroke-width="2" marker-end="url(#arrow-turq)"/>
+
+  <!-- ΔR/C label -->
+  <rect x="530" y="285" width="60" height="22" rx="4" fill="#00d4aa"/>
+  <text x="560" y="300" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="11" font-weight="700" fill="white">ΔR/C</text>
+
+  <!-- Output arrow -->
+  <line x1="410" y1="380" x2="410" y2="420" stroke="#1a1a2e" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Output box -->
+  <rect x="310" y="420" width="200" height="40" rx="8" fill="#00d4aa"/>
+  <text x="410" y="445" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="13" font-weight="600" fill="white">decision + confidence</text>
+
+  <!-- HardwareProfile label -->
+  <text x="700" y="355" text-anchor="end" font-family="'Inter','Segoe UI',sans-serif" font-size="10" fill="#999">HardwareProfile</text>
+  <text x="700" y="370" text-anchor="end" font-family="'Inter','Segoe UI',sans-serif" font-size="9" fill="#bbb">Jetson · RPi · GPU · TPU</text>
+
+  <!-- Change-point feedback loop -->
+  <path d="M 410 275 L 410 295 L 200 295 L 200 275" fill="none" stroke="#ff6b6b" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+  <text x="290" y="310" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="9" fill="#ff6b6b">reset posteriors</text>
+
+</svg>
