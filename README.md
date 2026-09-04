@@ -1,18 +1,24 @@
 <div align="center">
 
-<img src="assets/logo.png" alt="ACIES Logo" width="400">
+<img src="assets/logo.png" alt="ACIES" width="380">
 
 # ACIES
 
-**Adaptive Perception Control**
+### Adaptive Perception Control
 
-A decision-theoretic framework for adaptively controlling visual perception to minimize computational cost while maintaining target decision risk.
+A decision-theoretic framework for adaptively controlling visual perception
+to minimize computational cost while maintaining target decision risk.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Go 1.22+](https://img.shields.io/badge/go-1.22+-00ADD8.svg)](https://go.dev/)
-[![Tests](https://img.shields.io/badge/tests-8%2F8%20passed-brightgreen.svg)](#testing)
-[![MNIST](https://img.shields.io/badge/benchmark-MNIST%2010k-orange.svg)](#benchmarks)
+<br>
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![Go 1.22+](https://img.shields.io/badge/go-1.22+-00ADD8.svg?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
+[![C++](https://img.shields.io/badge/c%2B%2B-core-00599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white)](#c-acceleration)
+[![Tests](https://img.shields.io/badge/tests-8%2F8%20passed-brightgreen.svg?style=for-the-badge)](#testing)
+[![MNIST](https://img.shields.io/badge/benchmark-MNIST%2010k-ff6f00.svg?style=for-the-badge)](#benchmarks)
+
+<br>
 
 *Perception is not a fixed pipeline. It is a resource to control.*
 
@@ -20,24 +26,24 @@ A decision-theoretic framework for adaptively controlling visual perception to m
 
 ---
 
-## What is ACIES?
+## Why ACIES?
 
-ACIES treats visual perception as a **resource allocation problem**. Instead of processing every input at maximum resolution, it adaptively selects *what* to perceive by solving a cost-risk optimization at each step.
+Every perception system wastes resources processing information that doesn't change the decision. ACIES solves this by treating perception as a **cost-risk optimization problem**.
 
-**Core idea:** heterogeneous perception actions (resize to 64p, crop a region, activate layers) have different costs and different information gains. ACIES picks the action that maximizes **ΔR/C** — risk reduction per unit cost.
+| | Without ACIES | With ACIES |
+|--|:--:|:--:|
+| **Resolution** | Fixed (max) | Adaptive (optimal) |
+| **Cost** | 385.8 | **93.6** |
+| **Accuracy** | 98.8% | 90.8% |
+| **Savings** | — | **76%** |
 
-### Key Results (MNIST, 10,000 images)
+> **Trade 8% accuracy for 76% cost reduction.** Or tune the threshold to find your own sweet spot.
 
-| Method | Accuracy | Cost | Savings |
-|--------|:--------:|:----:|:-------:|
-| Fixed 1024p | 98.8% | 385.8 | — |
-| **ACIES** | **90.8%** | **93.6** | **76%** |
-| Fixed 224p | 82.1% | 76.5 | 80% |
-| Random | 95.5% | 149.6 | 61% |
+---
 
 ## Quick Start
 
-### Python
+### Python (stdlib only, zero dependencies)
 
 ```python
 from acies import APCController, APCConfig, HardwareProfile
@@ -59,14 +65,13 @@ result = apc.run(true_class=1, clarity_fn=clarity_fn)
 print(f"Decision: {result.decision} | Cost: {result.total_cost:.1f} | Steps: {result.n_steps}")
 ```
 
-### Go CLI
+### Go CLI (32,800 runs/sec)
 
 ```bash
 go build -o acies-cli .
 
 ./acies-cli run --hardware jetson --verbose
 ./acies-cli bench --iterations 5000 --hardware rpi
-./acies-cli config
 ```
 
 ### Docker
@@ -76,6 +81,8 @@ docker build -t acies .
 docker run acies bench --iterations 1000
 ```
 
+---
+
 ## Installation
 
 ```bash
@@ -83,17 +90,12 @@ git clone https://github.com/NICE-DEV226/ACIES.git
 cd ACIES
 ```
 
-**Python only** — no external dependencies, just stdlib.
-
-**With C++ acceleration:**
-```bash
-cd cpp && make && cd ..
-```
-
-**With Go CLI:**
-```bash
-go build -o acies-cli .
-```
+| Component | Command | Notes |
+|-----------|---------|-------|
+| Python | _(none)_ | stdlib only, zero deps |
+| C++ accelerator | `cd cpp && make` | Optional, 3-5x speedup |
+| Go CLI | `go build -o acies-cli .` | Single binary |
+| Docker | `docker build -t acies .` | Multi-stage, all-in-one |
 
 **Verify:**
 ```bash
@@ -101,92 +103,137 @@ python3 test_apc.py          # 8/8 tests
 ./acies-cli version          # ACIES v0.1.0
 ```
 
+---
+
 ## Architecture
 
 ```
-Input
-  │
-  ▼
-┌──────────────────────────────────────────────────┐
-│                  APCController                    │
-│                                                   │
-│  BeliefState ─── ClarityLearner ─── SafetyLayer  │
-│  (Bayesian)      (Thompson)         (risk guard) │
-│       │                │                │         │
-│  Conviction ──── ChangePoint ──────────┘         │
-│  (anti-oscill)   (shift detect)                   │
-│                                                   │
-│  Action Space: 64p │ 128p │ ... │ 1024p │ crops  │
-│  HardwareProfile: Jetson │ RPi │ GPU │ TPU       │
-└──────────────────────────────────────────────────┘
-  │
-  ▼
-Decision (class + confidence)
+                        ┌─────────────────────────────┐
+          input ──────▶ │       APCController          │
+                        │                              │
+                        │  BeliefState ──▶ Clarity     │
+                        │  (Bayesian)      (Thompson)  │
+                        │       │              │       │
+                        │  Conviction ◀── ChangePoint  │
+                        │  (anti-oscill)  (shift det.) │
+                        │                              │
+                        │  SafetyLayer ──▶ ActionSpace │
+                        │  (risk guard)    (ΔR/C score)│
+                        └──────────────┬──────────────┘
+                                       │
+                                       ▼
+                              decision + confidence
 ```
 
-**Control loop:** Sample → Score (ΔR/C) → Adjust (conviction) → Filter (safety) → Execute → Observe → Update → Check (change-point) → Repeat
+**Control loop:** Sample → Score (ΔR/C) → Adjust → Filter → Execute → Observe → Update → Repeat
+
+---
+
+## How It Works
+
+| Step | Component | What it does |
+|:----:|-----------|-------------|
+| 1 | **Belief Tracking** | Maintains P(Y=1 \| observations) via Bayesian filtering |
+| 2 | **Clarity Estimation** | Thompson Sampling learns P(correct \| action) online |
+| 3 | **Action Scoring** | Computes ΔR/C (risk reduction per cost) for each action |
+| 4 | **Conviction** | Anti-oscillation boosts high-clarity actions near threshold |
+| 5 | **Safety Filtering** | Rejects actions that could exceed risk threshold |
+| 6 | **Change-Point Detection** | Resets posteriors on distribution shifts |
+| 7 | **Decision** | Stops when confidence ≥ threshold or max steps reached |
+
+---
+
+## Benchmarks
+
+### MNIST (10,000 real images)
+
+```bash
+python3 examples/real_benchmark.py
+```
+
+| Method | Accuracy | Cost | Savings |
+|--------|:--------:|:----:|:-------:|
+| Fixed 1024p | 98.8% | 385.8 | — |
+| **ACIES** | **90.8%** | **93.6** | **76%** |
+| Fixed 224p | 82.1% | 76.5 | 80% |
+| Random | 95.5% | 149.6 | 61% |
+
+### Go CLI Performance
+
+```bash
+./acies-cli bench --iterations 5000
+```
+
+**32,800 runs/sec** — 70× faster than Python (476 images/sec)
+
+### Hardware Profiles
+
+| Profile | APC Cost | Fixed 1024p | Savings |
+|---------|:--------:|:-----------:|:-------:|
+| Default | 260.9 | 448.4 | 42% |
+| Jetson Orin | 204.4 | 347.1 | 41% |
+| Raspberry Pi 5 | 287.5 | 525.2 | 45% |
+| Desktop GPU | 290.6 | 479.0 | 39% |
+| Edge TPU | 53.4 | 92.0 | 42% |
+
+---
+
+## Testing
+
+```bash
+python3 test_apc.py
+```
+
+| # | Test | Description | Result |
+|:-:|------|-------------|:------:|
+| 1 | Base functionality | Accuracy, cost, exploration | ✓ |
+| 2 | Hard tasks | High difficulty scenarios | ✓ |
+| 3 | Distribution shift | Thompson adaptation | ✓ |
+| 4 | Sensor failure | Degraded reliability | ✓ |
+| 5 | Hardware profiles | All 5 profiles | ✓ |
+| 6 | Stress test | 5,000 iterations | ✓ |
+| 7 | Belief math | Bayesian verification | ✓ |
+| 8 | Thompson convergence | Posterior accuracy | ✓ |
+
+---
 
 ## Project Structure
 
 ```
 ACIES/
-├── acies/                     # Python package
-│   ├── __init__.py            # Exports
-│   ├── actions.py             # Action space & hardware profiles
-│   ├── belief.py              # Bayesian belief tracker
-│   ├── clarity_learner.py     # Thompson Sampling
-│   ├── safety.py              # Safety layer (risk guarantees)
-│   ├── conviction.py          # Anti-oscillation mechanism
-│   ├── change_point.py        # Bayesian change-point detection
-│   ├── controller.py          # Main APC controller
-│   └── accelerator.py         # C++ ctypes wrapper
+├── acies/                  # Python package (8 modules)
+│   ├── controller.py       # Main APC loop
+│   ├── belief.py           # Bayesian belief tracker
+│   ├── clarity_learner.py  # Thompson Sampling
+│   ├── safety.py           # Risk guarantees
+│   ├── conviction.py       # Anti-oscillation
+│   ├── change_point.py     # BOCPD shift detection
+│   ├── actions.py          # Action space & HW profiles
+│   └── accelerator.py      # C++ ctypes wrapper
 │
-├── cpp/                       # C++ core library
-│   ├── belief.h/.cpp          # Belief state
-│   ├── clarity_learner.h/.cpp # Thompson Sampling
-│   ├── acies.h/.cpp           # C API
+├── cpp/                    # C++ core library
+│   ├── belief.h/.cpp       # Belief state
+│   ├── clarity_learner.*   # Thompson Sampling
+│   ├── acies.h/.cpp        # C API
 │   └── Makefile
 │
-├── core.go                    # Go implementation
-├── main.go                    # Go CLI entry point
-├── go.mod                     # Go module
+├── core.go                 # Go implementation
+├── main.go                 # Go CLI (run/bench/config)
 │
-├── test_apc.py                # 8 robustness tests
-├── examples/
-│   ├── benchmark.py           # Simulated benchmark (5 methods × 5 profiles)
-│   ├── real_benchmark.py      # MNIST benchmark (10,000 real images)
-│   └── image_folder.py        # Image folder simulation
-│
-├── data/
-│   └── mnist_test.csv         # MNIST test set
-│
-├── docs/                      # Documentation
-│   ├── installation.md        # Setup guide
-│   ├── architecture.md        # Deep dive
-│   ├── configuration.md       # All parameters
-│   ├── cli-reference.md       # Go CLI
-│   ├── python-api.md          # Python API
-│   ├── cpp-api.md             # C API (FFI)
-│   ├── examples.md            # 10 examples
-│   ├── benchmarks.md          # Performance results
-│   └── contributing.md        # Dev guide
-│
-├── assets/                      # Logo & visual identity
-│   ├── logo.png                 # Main logo
-│   ├── logo-concept.png         # Concept variant (for docs/banners)
-│   ├── favicon-32x32.png        # Favicon 32×32
-│   ├── favicon-16x16.png        # Favicon 16×16
-│   └── logo-prompts.md          # Design concept & generation prompts
-│
-├── Dockerfile                 # Multi-stage (Python + Go + C++)
-├── LICENSE                    # MIT
-└── README.md                  # This file
+├── test_apc.py             # 8 robustness tests
+├── examples/               # Benchmarks & demos
+├── docs/                   # 9 documentation files
+├── assets/                 # Logo & visual identity
+├── Dockerfile              # Multi-stage build
+└── README.md
 ```
+
+---
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
+| Doc | Description |
+|-----|-------------|
 | [Installation](docs/installation.md) | Setup guide for Python, Go, C++, Docker |
 | [Architecture](docs/architecture.md) | Deep dive into control loop and algorithms |
 | [Configuration](docs/configuration.md) | All configuration parameters |
@@ -197,78 +244,20 @@ ACIES/
 | [Benchmarks](docs/benchmarks.md) | Performance results on MNIST |
 | [Contributing](docs/contributing.md) | Development guide |
 
-## Testing
-
-```bash
-python3 test_apc.py
-```
-
-8 tests covering:
-
-| Test | Description | Result |
-|------|-------------|:------:|
-| Base functionality | Accuracy, cost, exploration | ✓ 99.3% |
-| Hard tasks | High difficulty | ✓ 80.0% |
-| Distribution shift | Thompson adaptation | ✓ 97.0% |
-| Sensor failure | Degraded reliability | ✓ 96.0% |
-| Hardware profiles | All 5 profiles | ✓ |
-| Stress test | 5,000 iterations | ✓ <5% violations |
-| Belief math | Bayesian verification | ✓ |
-| Thompson convergence | Posterior accuracy | ✓ |
-
-## Benchmarks
-
-### MNIST (Real Data)
-
-```bash
-python3 examples/real_benchmark.py
-```
-
-- 10,000 MNIST test images
-- Binary classification (digit 0 vs non-0)
-- Pure Python image processing
-- 476 images/sec
-
-### Go CLI Performance
-
-```bash
-./acies-cli bench --iterations 5000
-```
-
-- 32,800 runs/sec
-- 70× faster than Python
-
-### Hardware Profiles
-
-| Profile | APC Cost | 1024p Cost | Savings |
-|---------|:--------:|:----------:|:-------:|
-| Default | 260.9 | 448.4 | 42% |
-| Jetson Orin | 204.4 | 347.1 | 41% |
-| Raspberry Pi 5 | 287.5 | 525.2 | 45% |
-| Desktop GPU | 290.6 | 479.0 | 39% |
-| Edge TPU | 53.4 | 92.0 | 42% |
-
-## How It Works
-
-1. **Belief Tracking**: Maintains P(Y=1 | observations) via Bayesian filtering
-2. **Clarity Estimation**: Thompson Sampling learns P(correct | action) online
-3. **Action Scoring**: Computes ΔR/C (risk reduction per cost) for each action
-4. **Conviction**: Anti-oscillation boosts high-clarity actions near threshold
-5. **Safety Filtering**: Rejects actions that could exceed risk threshold
-6. **Change-Point Detection**: Resets posteriors on distribution shifts
-7. **Decision**: Stops when confidence ≥ threshold or max steps reached
+---
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| CLI | Go (single binary, 32k runs/sec) |
-| Core | Python (belief, learner, safety, conviction, change-point) |
-| Accelerator | C++ via ctypes (belief + Thompson Sampling) |
-| Tests | 8 robustness tests |
-| Benchmark | 5 methods × 5 hardware profiles + MNIST |
-| Deploy | Multi-stage Dockerfile (Python + Go + C++) |
-| Docs | 9 markdown files, 1500+ lines |
+| Layer | Tech | Performance |
+|-------|------|-------------|
+| CLI | Go | 32,800 runs/sec |
+| Core | Python (stdlib) | 476 images/sec |
+| Accelerator | C++ via ctypes | 3-5× Python speed |
+| Tests | 8 robustness tests | all passing |
+| Benchmark | 5 methods × 5 HW profiles | + MNIST 10k |
+| Deploy | Multi-stage Dockerfile | Python + Go + C++ |
+
+---
 
 ## Contributing
 
@@ -287,3 +276,11 @@ MIT License — see [LICENSE](LICENSE).
   url = {https://github.com/NICE-DEV226/ACIES}
 }
 ```
+
+---
+
+<div align="center">
+
+**[Documentation](docs/architecture.md)** · **[API Reference](docs/python-api.md)** · **[Examples](examples/)** · **[Contributing](docs/contributing.md)**
+
+</div>
