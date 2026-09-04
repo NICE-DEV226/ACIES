@@ -25,6 +25,7 @@ from .actions import Action, HardwareProfile, build_standard_actions
 from .belief import BeliefState
 from .clarity_learner import ClarityLearner
 from .safety import SafetyLayer, SafetyConfig
+from .conviction import Conviction, ConvictionConfig
 
 
 @dataclass
@@ -49,6 +50,10 @@ class APCConfig:
     # Thompson Sampling
     clarity_prior_alpha: float = 1.0
     clarity_prior_beta: float = 1.0
+
+    # Conviction (anti-oscillation)
+    conviction_zone_start: float = 0.85
+    conviction_oscillation_threshold: int = 3
 
     # Debug
     verbose: bool = False
@@ -148,6 +153,12 @@ class APCController:
                 confidence_threshold=self.config.confidence_threshold,
             ),
         )
+        self.conviction = Conviction(
+            config=ConvictionConfig(
+                zone_start=self.config.conviction_zone_start,
+                oscillation_threshold=self.config.conviction_oscillation_threshold,
+            ),
+        )
 
         # Historique
         self._run_history: List[APCResult] = []
@@ -156,6 +167,7 @@ class APCController:
         """Remet le contrôleur à zéro (nouvelle image/tâche)."""
         self.belief.reset()
         self.safety.reset()
+        self.conviction.reset()
 
     def reset_all(self):
         """Remet tout (beliefs + learner + safety)."""
@@ -171,6 +183,7 @@ class APCController:
         Score = ΔR/C + bonus_exploration
         Si le risque est élevé (> max_risk * 0.7), pénalise les actions cheap
         pour forcer l'utilisation d'actions plus informatives.
+        Si on est dans la zone de conviction, ajuste les scores.
         """
         scored = []
         sampled_clarities = self.learner.sample_all()
@@ -201,6 +214,12 @@ class APCController:
             scored.append((action, score, clarity))
 
         scored.sort(key=lambda x: x[1], reverse=True)
+
+        # Appliquer les ajustements de conviction
+        clarity_estimates = {self.actions[i].id: self.learner.mean(i)
+                            for i in range(len(self.actions))}
+        scored = self.conviction.adjust_scores(scored, clarity_estimates)
+
         return scored
 
     def run(
@@ -233,6 +252,9 @@ class APCController:
         n_emergency = 0
 
         for step in range(max_steps):
+            # 0. Mettre à jour la conviction
+            self.conviction.update(self.belief.confidence)
+
             # 1. Scanner les actions et calculer les scores
             scored = self._score_actions()
 
@@ -316,10 +338,11 @@ class APCController:
 
             # 12. Debug
             if self.config.verbose:
+                zone = f" [CONVICTION ZONE, step={self.conviction.state.zone_steps}]" if self.conviction.state.in_zone else ""
                 print(f"  Step {step}: {safe_action.name} "
                       f"(clarity={clarity_true:.2f}, score={score:.3f}) "
                       f"→ obs={obs}, belief={self.belief.belief:.3f} "
-                      f"risk={self.belief.risk:.3f}")
+                      f"risk={self.belief.risk:.3f}{zone}")
 
         # Décision finale
         decision = self.belief.decision
@@ -395,4 +418,5 @@ class APCController:
             "avg_epc": round(self.avg_cost / max(self.avg_accuracy, 1e-10), 2),
             "learner": self.learner.summary(),
             "safety": self.safety.summary(),
+            "conviction": self.conviction.summary(),
         }

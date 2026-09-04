@@ -18,6 +18,7 @@ from .actions import Action, ActionType, HardwareProfile, build_standard_actions
 from .belief import BeliefState
 from .clarity_learner import ClarityLearner, BetaPosterior
 from .safety import SafetyLayer, SafetyConfig, SafetyState
+from .conviction import Conviction, ConvictionConfig, ConvictionState
 from .controller import APCController, APCConfig, APCResult, APCStep
 
 __all__ = [
@@ -25,6 +26,7 @@ __all__ = [
     "BeliefState",
     "ClarityLearner", "BetaPosterior",
     "SafetyLayer", "SafetyConfig", "SafetyState",
+    "Conviction", "ConvictionConfig", "ConvictionState",
     "APCController", "APCConfig", "APCResult", "APCStep",
 ]
 
