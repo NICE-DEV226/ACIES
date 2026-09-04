@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo.png" alt="ACIES Logo" width="400">
+
 # ACIES
 
 **Adaptive Perception Control**
@@ -168,6 +170,13 @@ ACIES/
 │   ├── examples.md            # 10 examples
 │   ├── benchmarks.md          # Performance results
 │   └── contributing.md        # Dev guide
+│
+├── assets/                      # Logo & visual identity
+│   ├── logo.png                 # Main logo
+│   ├── logo-concept.png         # Concept variant (for docs/banners)
+│   ├── favicon-32x32.png        # Favicon 32×32
+│   ├── favicon-16x16.png        # Favicon 16×16
+│   └── logo-prompts.md          # Design concept & generation prompts
 │
 ├── Dockerfile                 # Multi-stage (Python + Go + C++)
 ├── LICENSE                    # MIT
