@@ -12,6 +12,9 @@ build/
 cpp/*.o
 cpp/*.so
 
+# Go binary
+acies-cli
+
 # Virtual environments
 venv/
 env/
