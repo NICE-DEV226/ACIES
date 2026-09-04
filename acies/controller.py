@@ -26,6 +26,7 @@ from .belief import BeliefState
 from .clarity_learner import ClarityLearner
 from .safety import SafetyLayer, SafetyConfig
 from .conviction import Conviction, ConvictionConfig
+from .change_point import ChangePointDetector, ChangePointConfig
 
 
 @dataclass
@@ -54,6 +55,11 @@ class APCConfig:
     # Conviction (anti-oscillation)
     conviction_zone_start: float = 0.85
     conviction_oscillation_threshold: int = 3
+
+    # Change-point detection
+    change_point_enabled: bool = True
+    change_point_threshold: float = 0.5
+    change_point_hazard: float = 1/200
 
     # Debug
     verbose: bool = False
@@ -159,6 +165,15 @@ class APCController:
                 oscillation_threshold=self.config.conviction_oscillation_threshold,
             ),
         )
+        self.change_detector = None
+        if self.config.change_point_enabled:
+            self.change_detector = ChangePointDetector(
+                n_actions=len(self.actions),
+                config=ChangePointConfig(
+                    threshold=self.config.change_point_threshold,
+                    hazard_rate=self.config.change_point_hazard,
+                ),
+            )
 
         # Historique
         self._run_history: List[APCResult] = []
@@ -168,6 +183,8 @@ class APCController:
         self.belief.reset()
         self.safety.reset()
         self.conviction.reset()
+        if self.change_detector:
+            self.change_detector.reset()
 
     def reset_all(self):
         """Remet tout (beliefs + learner + safety)."""
@@ -304,6 +321,15 @@ class APCController:
             observation_correct = (obs == true_class)
             self.learner.update(safe_action.id, observation_correct)
 
+            # 8b. Détection de changement point
+            if self.change_detector:
+                is_cp = self.change_detector.update(safe_action.id, clarity_true)
+                if is_cp:
+                    self.learner.reset_posterior(safe_action.id)
+                    if self.config.verbose:
+                        print(f"    ⚡ CHANGE POINT detected on {safe_action.name} "
+                              f"at step {step}")
+
             # 9. Vérifier la sécurité post-action
             safe = self.safety.check_post_action(self.belief, safe_action)
 
@@ -410,7 +436,7 @@ class APCController:
         return sum(r.total_latency_ms for r in self._run_history) / len(self._run_history)
 
     def summary(self) -> dict:
-        return {
+        result = {
             "n_runs": len(self._run_history),
             "avg_cost": round(self.avg_cost, 2),
             "avg_accuracy": round(self.avg_accuracy, 4),
@@ -420,3 +446,6 @@ class APCController:
             "safety": self.safety.summary(),
             "conviction": self.conviction.summary(),
         }
+        if self.change_detector:
+            result["change_points"] = self.change_detector.summary()
+        return result

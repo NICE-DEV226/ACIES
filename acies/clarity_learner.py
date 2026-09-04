@@ -152,6 +152,13 @@ class ClarityLearner:
         """
         self.posteriors[action_id].update(correct)
 
+    def reset_posterior(self, action_id: int):
+        """
+        Réinitialise le posterior d'une action (après un changement point).
+        Revient au prior Beta(2,2).
+        """
+        self.posteriors[action_id] = BetaPosterior(alpha=2.0, beta=2.0)
+
     def mean(self, action_id: int) -> float:
         """Estimation moyenne (sans échantillonnage)."""
         return self.posteriors[action_id].mean

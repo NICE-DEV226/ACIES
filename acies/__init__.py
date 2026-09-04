@@ -19,6 +19,7 @@ from .belief import BeliefState
 from .clarity_learner import ClarityLearner, BetaPosterior
 from .safety import SafetyLayer, SafetyConfig, SafetyState
 from .conviction import Conviction, ConvictionConfig, ConvictionState
+from .change_point import ChangePointDetector, ChangePointConfig
 from .controller import APCController, APCConfig, APCResult, APCStep
 
 __all__ = [
@@ -27,6 +28,7 @@ __all__ = [
     "ClarityLearner", "BetaPosterior",
     "SafetyLayer", "SafetyConfig", "SafetyState",
     "Conviction", "ConvictionConfig", "ConvictionState",
+    "ChangePointDetector", "ChangePointConfig",
     "APCController", "APCConfig", "APCResult", "APCStep",
 ]
 
