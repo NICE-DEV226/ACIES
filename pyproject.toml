@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "acies"
-version = "0.1.0"
+version = "0.1.4"
 description = "Adaptive Perception Control — minimize vision compute cost while maintaining decision accuracy"
 readme = "README.md"
 license = {text = "MIT"}

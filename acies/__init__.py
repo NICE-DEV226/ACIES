@@ -32,4 +32,4 @@ __all__ = [
     "APCController", "APCConfig", "APCResult", "APCStep",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.1.4"
