@@ -8,6 +8,10 @@ dist/
 build/
 *.egg
 
+# C++ build artifacts
+cpp/*.o
+cpp/*.so
+
 # Virtual environments
 venv/
 env/
