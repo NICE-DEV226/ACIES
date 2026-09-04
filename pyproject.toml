@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "acies"
+version = "0.1.0"
+description = "Adaptive Perception Control — minimize vision compute cost while maintaining decision accuracy"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "NICE-DEV226", email = "nicedev226@gmail.com"}
+]
+keywords = [
+    "adaptive-perception",
+    "computer-vision",
+    "cost-optimization",
+    "thompson-sampling",
+    "bayesian",
+    "edge-ai",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+]
+
+[project.urls]
+Homepage = "https://github.com/NICE-DEV226/ACIES"
+Documentation = "https://github.com/NICE-DEV226/ACIES/tree/main/docs"
+Repository = "https://github.com/NICE-DEV226/ACIES"
+Issues = "https://github.com/NICE-DEV226/ACIES/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["acies*"]
