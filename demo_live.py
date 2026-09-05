@@ -74,7 +74,7 @@ class LiveDemo:
             self._draw_overlay(frame, result, elapsed)
 
             cv2.imshow('ACIES Live Demo', frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(30) & 0xFF == ord('q'):
                 break
 
         self._print_summary()

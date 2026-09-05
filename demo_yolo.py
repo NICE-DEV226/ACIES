@@ -274,7 +274,7 @@ def main():
             display = demo.draw_results(info)
             cv2.imshow("ACIES × YOLO", display)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(30) & 0xFF == ord('q'):
                 break
 
         cap.release()
@@ -312,7 +312,7 @@ def main():
             display = demo.draw_results(info)
             cv2.imshow("ACIES × YOLO", display)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(30) & 0xFF == ord('q'):
                 break
 
         cap.release()
