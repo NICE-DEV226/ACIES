@@ -215,14 +215,19 @@ class ACIESYOLO:
     def save_report(self):
         """Save full report to JSON."""
         def make_serializable(obj):
+            import numpy as np
             if isinstance(obj, dict):
                 return {k: make_serializable(v) for k, v in obj.items()}
             elif isinstance(obj, (list, tuple)):
                 return [make_serializable(v) for v in obj]
-            elif hasattr(obj, 'item'):
-                return obj.item()
-            elif hasattr(obj, '__bool__') and not isinstance(obj, bool):
+            elif isinstance(obj, (np.integer,)):
+                return int(obj)
+            elif isinstance(obj, (np.floating,)):
+                return float(obj)
+            elif isinstance(obj, (np.bool_,)):
                 return bool(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
             return obj
 
         report = {
