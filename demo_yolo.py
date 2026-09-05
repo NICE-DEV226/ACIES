@@ -107,7 +107,7 @@ class ACIESYOLO:
             return min(max(clarity + random.uniform(-0.03, 0.03), 0.1), 0.99)
 
         # Run ACIES
-        result = apc.run(true_class=1, clarity_fn=clarity_fn)
+        result = self.apc.run(true_class=1, clarity_fn=clarity_fn)
 
         # Determine resolution
         if result.abstained or result.degraded:
