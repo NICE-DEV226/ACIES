@@ -1,23 +1,26 @@
 """
-ACIES × YOLO — Adaptive Object Detection
+ACIES × YOLO — Adaptive Object Detection with Data Collection
 
-ACIES decides the resolution for each frame.
-YOLO runs on the chosen resolution.
-Result: same accuracy, lower cost.
+Runs YOLO with ACIES on webcam/video/images and outputs:
+- Real-time overlay with metrics
+- JSON log of every frame (resolution, cost, detections, abstention)
+- Summary report at the end
 
 Usage:
     python demo_yolo.py                    # webcam
     python demo_yolo.py --source video.mp4 # video file
     python demo_yolo.py --source image.jpg # single image
+    python demo_yolo.py --frames 200       # limit to 200 frames
 """
 
 import sys
 import os
+import json
 import time
 import argparse
 import random
+from datetime import datetime
 
-# Fix Qt/Wayland issues on Linux — force X11
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 os.environ["OPENCV_VIDEOIO_PRIORITY_BACKEND"] = "1"
 
@@ -36,7 +39,6 @@ except ImportError:
 from acies import APCController, APCConfig, HardwareProfile
 
 
-# YOLO class names
 COCO_CLASSES = [
     'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
     'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign',
@@ -53,22 +55,16 @@ COCO_CLASSES = [
     'scissors', 'teddy bear', 'hair drier', 'toothbrush',
 ]
 
-# Resolution presets (width)
 RESOLUTIONS = {
-    "64p": 64,
-    "128p": 128,
-    "224p": 224,
-    "320p": 320,
-    "512p": 512,
-    "1024p": 1024,
+    "64p": 64, "128p": 128, "224p": 224,
+    "320p": 320, "512p": 512, "1024p": 1024,
 }
 
 
 class ACIESYOLO:
-    """ACIES + YOLO adaptive object detection."""
+    """ACIES + YOLO with full data collection."""
 
-    def __init__(self, model_size="n", confidence_threshold=0.85):
-        print(f"Loading YOLOv8-{model_size}...")
+    def __init__(self, model_size="n", confidence_threshold=0.85, output_dir="output"):
         self.yolo = YOLO(f"yolov8{model_size}.pt")
 
         self.config = APCConfig(
@@ -80,174 +76,212 @@ class ACIESYOLO:
             hardware=HardwareProfile.desktop_gpu(),
         )
         self.apc = APCController(self.config)
+        self.output_dir = output_dir
+        os.makedirs(output_dir, exist_ok=True)
 
+        # Data collection
+        self.frame_log = []
         self.frame_count = 0
-        self.total_detections = 0
         self.fps_history = []
-        self.cost_history = []
 
     def process_frame(self, frame):
-        """Process one frame with ACIES + YOLO."""
+        """Process one frame and collect data."""
         start = time.time()
         self.frame_count += 1
 
-        # ACIES decides resolution
-        clarity_fn = self._make_clarity_fn(frame)
-        result = self.apc.run(true_class=1, clarity_fn=clarity_fn)
-
-        # Determine resolution from ACIES decision
-        if result.abstained or result.degraded:
-            # Fallback: use lowest resolution
-            chosen_res = 320
-            yolo_confidence = 0.0
-        else:
-            # Use last action's resolution
-            last_action = result.steps[-1].action.name
-            chosen_res = RESOLUTIONS.get(last_action, 320)
-            yolo_confidence = result.final_belief
-
-        # Run YOLO on chosen resolution
-        h, w = frame.shape[:2]
-        if chosen_res != w:
-            scale = chosen_res / max(w, h)
-            new_w, new_h = int(w * scale), int(h * scale)
-            small_frame = cv2.resize(frame, (new_w, new_h))
-        else:
-            small_frame = frame
-
-        detections = self.yolo(small_frame, verbose=False)[0]
-        boxes = detections.boxes
-        n_detections = len(boxes)
-        self.total_detections += n_detections
-
-        # Scale boxes back to original size
-        if chosen_res != w:
-            scale_x = w / small_frame.shape[1]
-            scale_y = h / small_frame.shape[0]
-        else:
-            scale_x, scale_y = 1.0, 1.0
-
-        elapsed = time.time() - start
-        self.fps_history.append(1.0 / max(elapsed, 0.001))
-        self.cost_history.append(result.total_cost)
-
-        return {
-            "frame": frame,
-            "small_frame": small_frame,
-            "boxes": boxes,
-            "scale_x": scale_x,
-            "scale_y": scale_y,
-            "result": result,
-            "chosen_res": chosen_res,
-            "yolo_confidence": yolo_confidence,
-            "n_detections": n_detections,
-            "elapsed": elapsed,
-        }
-
-    def _make_clarity_fn(self, frame):
-        """Simulate clarity based on frame content."""
+        # Clarity function
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         brightness = gray.mean() / 255.0
         contrast = gray.std() / 128.0
         edges = cv2.Canny(gray, 50, 150).mean() / 255.0
 
         def clarity_fn(action):
-            # More edges = harder = lower clarity
             base = min(brightness * 1.2, 1.0) * min(contrast * 1.5, 1.0)
-            base *= (1.0 - edges * 0.3)  # Penalize complex scenes
-
+            base *= (1.0 - edges * 0.3)
             if 'crop' in action.name:
                 clarity = base * 0.85
             elif action.name == '1024p':
                 clarity = base * 1.05
             else:
                 clarity = base
-
             return min(max(clarity + random.uniform(-0.03, 0.03), 0.1), 0.99)
 
-        return clarity_fn
+        # Run ACIES
+        result = apc.run(true_class=1, clarity_fn=clarity_fn)
 
-    def draw_results(self, info):
-        """Draw detections and ACIES info on frame."""
+        # Determine resolution
+        if result.abstained or result.degraded:
+            chosen_res = 320
+            action_name = "fallback"
+        else:
+            action_name = result.steps[-1].action.name
+            chosen_res = RESOLUTIONS.get(action_name, 320)
+
+        # Run YOLO
+        h, w = frame.shape[:2]
+        scale = chosen_res / max(w, h)
+        small = cv2.resize(frame, (int(w * scale), int(h * scale)))
+        detections = self.yolo(small, verbose=False)[0]
+        boxes = detections.boxes
+
+        elapsed = time.time() - start
+        self.fps_history.append(1.0 / max(elapsed, 0.001))
+
+        # Collect frame data
+        frame_data = {
+            "frame": self.frame_count,
+            "timestamp": datetime.now().isoformat(),
+            "resolution_chosen": chosen_res,
+            "action": action_name,
+            "acies_cost": round(result.total_cost, 1),
+            "acies_steps": result.n_steps,
+            "acies_confidence": round(result.final_belief, 3),
+            "abstained": result.abstained,
+            "degraded": result.degraded,
+            "budget_exceeded": result.cost_budget_exceeded,
+            "avg_clarity": round(result.avg_clarity, 3),
+            "n_detections": len(boxes),
+            "detection_classes": [COCO_CLASSES[int(c.cls[0])] for c in boxes],
+            "detection_confs": [round(float(c.conf[0]), 3) for c in boxes],
+            "frame_brightness": round(brightness, 3),
+            "frame_contrast": round(contrast, 3),
+            "frame_edges": round(edges, 3),
+            "process_time_ms": round(elapsed * 1000, 1),
+        }
+        self.frame_log.append(frame_data)
+
+        # Scale boxes for drawing
+        scale_x = w / small.shape[1] if chosen_res != w else 1.0
+        scale_y = h / small.shape[0] if chosen_res != w else 1.0
+
+        return {
+            "frame": frame, "boxes": boxes,
+            "scale_x": scale_x, "scale_y": scale_y,
+            "result": result, "chosen_res": chosen_res,
+            "data": frame_data,
+        }
+
+    def draw(self, info):
+        """Draw overlay with metrics."""
         frame = info["frame"].copy()
         h, w = frame.shape[:2]
+        d = info["data"]
 
-        # Draw YOLO detections
+        # Draw detections
         for box in info["boxes"]:
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             x1, y1 = int(x1 * info["scale_x"]), int(y1 * info["scale_y"])
             x2, y2 = int(x2 * info["scale_x"]), int(y2 * info["scale_y"])
-
             conf = float(box.conf[0])
             cls = int(box.cls[0])
             label = f"{COCO_CLASSES[cls]} {conf:.2f}"
-
             color = (0, 255, 0) if conf > 0.7 else (0, 165, 255)
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             cv2.putText(frame, label, (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
-        # ACIES overlay
-        result = info["result"]
+        # Status bar
         overlay = frame.copy()
-        cv2.rectangle(overlay, (0, 0), (w, 140), (0, 0, 0), -1)
+        cv2.rectangle(overlay, (0, 0), (w, 160), (0, 0, 0), -1)
         cv2.addWeighted(overlay, 0.6, frame, 0.4, 0, frame)
 
-        # Status
-        if result.abstained:
-            status_color = (0, 0, 255)
-            status = "ABSTAIN"
-        elif result.degraded:
-            status_color = (0, 165, 255)
-            status = "DEGRADED"
+        if d["abstained"]:
+            status_color, status = (0, 0, 255), "ABSTAIN"
+        elif d["degraded"]:
+            status_color, status = (0, 165, 255), "DEGRADED"
         else:
-            status_color = (0, 255, 0)
-            status = "ACTIVE"
+            status_color, status = (0, 255, 0), "ACTIVE"
 
         avg_fps = sum(self.fps_history[-30:]) / min(len(self.fps_history), 30)
-        avg_cost = sum(self.cost_history[-30:]) / min(len(self.cost_history), 30)
 
         lines = [
-            f"Status: {status}  Resolution: {info['chosen_res']}p  "
-            f"Detections: {info['n_detections']}",
-            f"ACIES cost: {result.total_cost:.0f}  Steps: {result.n_steps}  "
-            f"Confidence: {result.final_belief:.2f}",
-            f"FPS: {avg_fps:.1f}  Avg cost: {avg_cost:.0f}  "
-            f"Frame: {self.frame_count}",
+            f"ACIES x YOLO  |  {status}  |  {d['resolution_chosen']}p  |  {d['n_detections']} objects",
+            f"Cost: {d['acies_cost']:.0f}/500  Steps: {d['acies_steps']}  "
+            f"Conf: {d['acies_confidence']:.2f}  FPS: {avg_fps:.1f}",
+            f"Brightness: {d['frame_brightness']:.2f}  Contrast: {d['frame_contrast']:.2f}  "
+            f"Edges: {d['frame_edges']:.2f}  Clarity: {d['avg_clarity']:.2f}",
+            f"Frame {d['frame']}  |  Abstain: {d['abstained']}  "
+            f"Degraded: {d['degraded']}  Budget: {d['budget_exceeded']}",
         ]
 
-        cv2.putText(frame, f"ACIES × YOLO", (10, 25),
+        cv2.putText(frame, f"ACIES x YOLO", (10, 25),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, status_color, 2)
-
         for i, line in enumerate(lines):
-            cv2.putText(frame, line, (10, 55 + i * 25),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            cv2.putText(frame, line, (10, 55 + i * 28),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1)
 
         return frame
 
-    def print_summary(self):
-        print("\n" + "=" * 50)
-        print("SESSION SUMMARY")
-        print("=" * 50)
-        summary = self.apc.summary()
-        print(f"  Frames processed: {self.frame_count}")
-        print(f"  Total detections: {self.total_detections}")
-        print(f"  Avg cost: {summary['avg_cost']:.1f}")
-        print(f"  Avg accuracy: {summary['avg_accuracy']:.2%}")
+    def save_report(self):
+        """Save full report to JSON."""
+        report = {
+            "session": {
+                "timestamp": datetime.now().isoformat(),
+                "total_frames": self.frame_count,
+                "config": {
+                    "confidence_threshold": self.config.confidence_threshold,
+                    "max_cost_per_image": self.config.max_cost_per_image,
+                    "degradation_patience": self.config.degradation_patience,
+                },
+            },
+            "summary": self.apc.summary(),
+            "frames": self.frame_log,
+            "resolution_distribution": {},
+            "detection_stats": {},
+        }
+
+        # Resolution distribution
+        for f in self.frame_log:
+            res = str(f["resolution_chosen"])
+            report["resolution_distribution"][res] = \
+                report["resolution_distribution"].get(res, 0) + 1
+
+        # Detection stats
+        all_classes = []
+        for f in self.frame_log:
+            all_classes.extend(f["detection_classes"])
+        for cls in set(all_classes):
+            report["detection_stats"][cls] = all_classes.count(cls)
+
+        path = os.path.join(self.output_dir, "report.json")
+        with open(path, "w") as fp:
+            json.dump(report, fp, indent=2)
+
+        # Print summary
+        print("\n" + "=" * 60)
+        print("SESSION REPORT")
+        print("=" * 60)
+        print(f"  Frames: {self.frame_count}")
         print(f"  Avg FPS: {sum(self.fps_history)/len(self.fps_history):.1f}")
-        print(f"  Safety violations: {summary['safety']['n_violations']}")
-        print(f"  Budget exceeded: {sum(1 for r in self.apc._run_history if r.cost_budget_exceeded)}")
+
+        s = self.apc.summary()
+        print(f"  Avg ACIES cost: {s['avg_cost']:.1f}")
+        print(f"  Abstained: {sum(1 for f in self.frame_log if f['abstained'])}")
+        print(f"  Degraded: {sum(1 for f in self.frame_log if f['degraded'])}")
+        print(f"  Budget exceeded: {sum(1 for f in self.frame_log if f['budget_exceeded'])}")
+        print(f"  Total detections: {sum(f['n_detections'] for f in self.frame_log)}")
+
+        print(f"\n  Resolution distribution:")
+        for res, count in sorted(report["resolution_distribution"].items()):
+            print(f"    {res}p: {count} frames ({count/self.frame_count*100:.0f}%)")
+
+        if report["detection_stats"]:
+            print(f"\n  Detected objects:")
+            for cls, count in sorted(report["detection_stats"].items(), key=lambda x: -x[1]):
+                print(f"    {cls}: {count}")
+
+        print(f"\n  Full report saved to: {path}")
+        print("=" * 60)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ACIES × YOLO Adaptive Detection")
-    parser.add_argument("--source", default="0", help="Camera id, video path, or image")
-    parser.add_argument("--model", default="n", choices=["n", "s", "m", "l", "x"],
-                        help="YOLO model size")
-    parser.add_argument("--conf", type=float, default=0.85, help="ACIES confidence threshold")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--source", default="0")
+    parser.add_argument("--model", default="n", choices=["n", "s", "m", "l", "x"])
+    parser.add_argument("--conf", type=float, default=0.85)
+    parser.add_argument("--frames", type=int, default=0, help="Max frames (0=unlimited)")
     args = parser.parse_args()
 
-    # Parse source
     try:
         source = int(args.source)
     except ValueError:
@@ -255,70 +289,35 @@ def main():
 
     demo = ACIESYOLO(model_size=args.model, confidence_threshold=args.conf)
 
-    if isinstance(source, int):
-        # Webcam
-        cap = cv2.VideoCapture(source)
-        if not cap.isOpened():
-            print(f"Cannot open camera {source}")
-            return
+    cap = cv2.VideoCapture(source)
+    if not cap.isOpened():
+        print(f"Cannot open {source}")
+        return
 
-        print("ACIES × YOLO — Press 'q' to quit")
-        print("-" * 50)
+    print("ACIES x YOLO — Press 'q' to quit")
+    print(f"Config: thr={args.conf}, model=yolov8{args.model}")
+    print("-" * 60)
 
+    try:
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
 
             info = demo.process_frame(frame)
-            display = demo.draw_results(info)
-            cv2.imshow("ACIES × YOLO", display)
+            display = demo.draw(info)
+            cv2.imshow("ACIES x YOLO", display)
+
+            if args.frames > 0 and demo.frame_count >= args.frames:
+                print(f"\nReached {args.frames} frames limit.")
+                break
 
             if cv2.waitKey(30) & 0xFF == ord('q'):
                 break
-
+    finally:
         cap.release()
         cv2.destroyAllWindows()
-
-    elif source.endswith(('.jpg', '.jpeg', '.png')):
-        # Single image
-        frame = cv2.imread(source)
-        if frame is None:
-            print(f"Cannot read {source}")
-            return
-
-        info = demo.process_frame(frame)
-        display = demo.draw_results(info)
-        cv2.imwrite("result.jpg", display)
-        print(f"Result saved to result.jpg")
-        print(f"  Resolution chosen: {info['chosen_res']}p")
-        print(f"  Detections: {info['n_detections']}")
-        print(f"  ACIES cost: {info['result'].total_cost:.1f}")
-
-    else:
-        # Video file
-        cap = cv2.VideoCapture(source)
-        if not cap.isOpened():
-            print(f"Cannot open {source}")
-            return
-
-        print(f"Processing {source}...")
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            info = demo.process_frame(frame)
-            display = demo.draw_results(info)
-            cv2.imshow("ACIES × YOLO", display)
-
-            if cv2.waitKey(30) & 0xFF == ord('q'):
-                break
-
-        cap.release()
-        cv2.destroyAllWindows()
-
-    demo.print_summary()
+        demo.save_report()
 
 
 if __name__ == "__main__":
