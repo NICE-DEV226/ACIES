@@ -37,6 +37,7 @@ except ImportError:
     sys.exit(1)
 
 from acies import APCController, APCConfig, HardwareProfile
+from acies.multiclass import MultiClassBelief
 
 
 COCO_CLASSES = [
@@ -76,6 +77,15 @@ class ACIESYOLO:
             hardware=HardwareProfile.desktop_gpu(),
         )
         self.apc = APCController(self.config)
+
+        # Multi-class image naming
+        self.classifier = MultiClassBelief(
+            class_names=[
+                "person", "vehicle", "animal", "object", "indoor",
+                "outdoor", "food", "furniture", "electronics", "other"
+            ],
+            prior_alpha=1.0,
+        )
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
 
@@ -124,6 +134,13 @@ class ACIESYOLO:
         detections = self.yolo(small, verbose=False)[0]
         boxes = detections.boxes
 
+        # Classify image based on YOLO detections
+        detected_classes = [COCO_CLASSES[int(c.cls[0])] for c in boxes]
+        image_category = self._categorize_image(detected_classes, brightness, contrast)
+        self.classifier.update(image_category, clarity=result.final_belief if not result.abstained else 0.3)
+        prediction = self.classifier.prediction
+        top3 = self.classifier.top_k(3)
+
         elapsed = time.time() - start
         self.fps_history.append(1.0 / max(elapsed, 0.001))
 
@@ -141,8 +158,11 @@ class ACIESYOLO:
             "budget_exceeded": result.cost_budget_exceeded,
             "avg_clarity": round(result.avg_clarity, 3),
             "n_detections": len(boxes),
-            "detection_classes": [COCO_CLASSES[int(c.cls[0])] for c in boxes],
+            "detection_classes": detected_classes,
             "detection_confs": [round(float(c.conf[0]), 3) for c in boxes],
+            "image_name": prediction,
+            "image_name_confidence": round(self.classifier.confidence, 3),
+            "image_name_top3": [(n, round(p, 3)) for n, p in top3],
             "frame_brightness": round(brightness, 3),
             "frame_contrast": round(contrast, 3),
             "frame_edges": round(edges, 3),
@@ -160,6 +180,36 @@ class ACIESYOLO:
             "result": result, "chosen_res": chosen_res,
             "data": frame_data,
         }
+
+    def _categorize_image(self, detected_classes, brightness, contrast):
+        """Map YOLO detections + image stats to a scene category."""
+        if not detected_classes:
+            if brightness < 0.3:
+                return "indoor"
+            elif brightness > 0.7 and contrast > 0.3:
+                return "outdoor"
+            return "other"
+
+        # Priority mapping
+        priority = {
+            "person": "person", "car": "vehicle", "truck": "vehicle",
+            "bus": "vehicle", "motorcycle": "vehicle", "bicycle": "vehicle",
+            "cat": "animal", "dog": "animal", "bird": "animal",
+            "horse": "animal", "sheep": "animal", "cow": "animal",
+            "chair": "furniture", "couch": "furniture", "bed": "furniture",
+            "dining table": "furniture", "potted plant": "furniture",
+            "tv": "electronics", "laptop": "electronics", "cell phone": "electronics",
+            "keyboard": "electronics", "mouse": "electronics", "remote": "electronics",
+            "bottle": "food", "cup": "food", "bowl": "food",
+            "apple": "food", "banana": "food", "sandwich": "food",
+            "pizza": "food", "cake": "food",
+        }
+
+        for cls in detected_classes:
+            if cls in priority:
+                return priority[cls]
+
+        return "object"
 
     def draw(self, info):
         """Draw overlay with metrics."""
@@ -194,14 +244,19 @@ class ACIESYOLO:
 
         avg_fps = sum(self.fps_history[-30:]) / min(len(self.fps_history), 30)
 
+        # Image name line
+        image_name = d["image_name"]
+        name_conf = d["image_name_confidence"]
+        top3 = d["image_name_top3"]
+        top3_str = " | ".join([f"{n}({p:.0%})" for n, p in top3])
+
         lines = [
-            f"ACIES x YOLO  |  {status}  |  {d['resolution_chosen']}p  |  {d['n_detections']} objects",
+            f"IMAGE: {image_name.upper()} ({name_conf:.0%})  |  {status}  |  {d['resolution_chosen']}p",
+            f"Top3: {top3_str}",
             f"Cost: {d['acies_cost']:.0f}/500  Steps: {d['acies_steps']}  "
             f"Conf: {d['acies_confidence']:.2f}  FPS: {avg_fps:.1f}",
-            f"Brightness: {d['frame_brightness']:.2f}  Contrast: {d['frame_contrast']:.2f}  "
-            f"Edges: {d['frame_edges']:.2f}  Clarity: {d['avg_clarity']:.2f}",
-            f"Frame {d['frame']}  |  Abstain: {d['abstained']}  "
-            f"Degraded: {d['degraded']}  Budget: {d['budget_exceeded']}",
+            f"Objects: {d['n_detections']}  |  Brightness: {d['frame_brightness']:.2f}  "
+            f"Contrast: {d['frame_contrast']:.2f}  Edges: {d['frame_edges']:.2f}",
         ]
 
         cv2.putText(frame, f"ACIES x YOLO", (10, 25),
@@ -285,6 +340,16 @@ class ACIESYOLO:
             print(f"\n  Detected objects:")
             for cls, count in sorted(report["detection_stats"].items(), key=lambda x: -x[1]):
                 print(f"    {cls}: {count}")
+
+        # Image naming stats
+        name_stats = {}
+        for f in self.frame_log:
+            name = f["image_name"]
+            name_stats[name] = name_stats.get(name, 0) + 1
+        if name_stats:
+            print(f"\n  Image categories (named by ACIES):")
+            for name, count in sorted(name_stats.items(), key=lambda x: -x[1]):
+                print(f"    {name}: {count} frames ({count/self.frame_count*100:.0f}%)")
 
         print(f"\n  Full report saved to: {path}")
         print("=" * 60)
