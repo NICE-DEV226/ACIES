@@ -40,6 +40,12 @@ class APCConfig:
     confidence_threshold: float = 0.95
     max_steps: int = 8
 
+    # Robustesse
+    max_cost_per_image: float = 800.0      # Budget max par image
+    min_clarity_threshold: float = 0.4     # Clarté en dessous = image dégradée
+    degradation_patience: int = 3          # Steps avant d'abandonner si clarity basse
+    abstention_confidence: float = 0.6     # Confiance min pour ne pas abstain
+
     # Sécurité
     max_risk: float = 2.0
     emergency_risk: float = 4.0
@@ -99,6 +105,9 @@ class APCResult:
     final_belief: float
     final_risk: float
     abstained: bool
+    degraded: bool           # Image trop dégradée (blur, noise extreme)
+    cost_budget_exceeded: bool  # Budget max dépassé
+    avg_clarity: float       # Clarté moyenne observée
 
     @property
     def actions_taken(self) -> List[str]:
@@ -117,6 +126,9 @@ class APCResult:
             "final_belief": round(self.final_belief, 4),
             "final_risk": round(self.final_risk, 4),
             "abstained": self.abstained,
+            "degraded": self.degraded,
+            "cost_budget_exceeded": self.cost_budget_exceeded,
+            "avg_clarity": round(self.avg_clarity, 3),
             "actions": self.actions_taken,
         }
 
@@ -267,8 +279,17 @@ class APCController:
         total_flops = 0.0
         steps = []
         n_emergency = 0
+        low_clarity_count = 0  # Compteur de steps avec clarity basse
+        clarity_sum = 0.0      # Somme des clarités observées
+        degraded = False
+        cost_budget_exceeded = False
 
         for step in range(max_steps):
+            # ── ROBUSTESSE: Budget max ──
+            if total_cost >= self.config.max_cost_per_image:
+                cost_budget_exceeded = True
+                break
+
             # 0. Mettre à jour la conviction
             self.conviction.update(self.belief.confidence)
 
@@ -286,7 +307,7 @@ class APCController:
             )
 
             if safe_action is None:
-                # STOP
+                # STOP (safety layer decided)
                 break
 
             # 3. Vérifier l'urgence
@@ -297,6 +318,18 @@ class APCController:
             clarity_true = clarity_fn(safe_action)
             clarity_sampled = self.learner.sample(safe_action.id)
             cost = safe_action.cost(self.config.hardware)
+
+            # ── ROBUSTESSE: Détection de dégradation ──
+            clarity_sum += clarity_true
+            if clarity_true < self.config.min_clarity_threshold:
+                low_clarity_count += 1
+            else:
+                low_clarity_count = 0
+
+            # Si trop de steps avec clarity basse → image dégradée
+            if low_clarity_count >= self.config.degradation_patience:
+                degraded = True
+                break
 
             # 5. Générer l'observation (bruitée par la clarté)
             if true_class == 1:
@@ -314,7 +347,6 @@ class APCController:
             self.belief.update(obs, clarity_true)
 
             # 8. Mettre à jour le learner
-            # L'observation est "correcte" si elle est cohérente avec la vraie classe
             observation_correct = (obs == true_class)
             self.learner.update(safe_action.id, observation_correct)
 
@@ -330,17 +362,12 @@ class APCController:
             # 9. Vérifier la sécurité post-action
             safe = self.safety.check_post_action(self.belief, safe_action)
 
-            # 10. Si le risque est trop élevé après l'action, forcer continuation
-            if self.belief.risk > self.safety.config.max_risk:
-                # Ne pas s'arrêter — forcer une observation corrective au step suivant
-                pass
-
             # 10. Accumuler les coûts
             total_cost += cost
             total_latency += safe_action.base_latency_ms * self.config.hardware.latency_scale
             total_energy += safe_action.base_energy_mJ * self.config.hardware.energy_scale
             peak_memory = max(peak_memory, safe_action.base_memory_MB * self.config.hardware.memory_scale)
-            total_flops += safe_action.pixel_ratio * 1400  # Approximation FLOPs
+            total_flops += safe_action.pixel_ratio * 1400
 
             # 11. Enregistrer le step
             steps.append(APCStep(
@@ -367,10 +394,22 @@ class APCController:
                       f"→ obs={obs}, belief={self.belief.belief:.3f} "
                       f"risk={self.belief.risk:.3f}{zone}")
 
-        # Décision finale
-        decision = self.belief.decision
-        correct = (decision == true_class)
-        abstained = self.safety.should_abstain(self.belief, len(steps))
+        # ── Décision finale avec abstention ──
+        n_steps_done = len(steps)
+        avg_clarity = clarity_sum / max(n_steps_done, 1)
+
+        # Abstain si: pas assez d'observations OU confiance trop basse
+        abstained = (
+            n_steps_done < self.config.min_observations or
+            self.belief.confidence < self.config.abstention_confidence
+        )
+
+        if abstained:
+            decision = -1  # -1 = abstention
+            correct = False
+        else:
+            decision = self.belief.decision
+            correct = (decision == true_class)
 
         result = APCResult(
             decision=decision,
@@ -380,12 +419,15 @@ class APCController:
             total_energy_mJ=total_energy,
             peak_memory_MB=peak_memory,
             total_flops_M=total_flops,
-            n_steps=len(steps),
+            n_steps=n_steps_done,
             n_emergency=n_emergency,
             steps=steps,
             final_belief=self.belief.belief,
             final_risk=self.belief.risk,
             abstained=abstained,
+            degraded=degraded,
+            cost_budget_exceeded=cost_budget_exceeded,
+            avg_clarity=avg_clarity,
         )
 
         self._run_history.append(result)
