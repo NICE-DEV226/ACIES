@@ -10,8 +10,12 @@ Requirements:
 """
 
 import sys
+import os
 import time
 import random
+
+# Fix Qt/Wayland issues on Linux — force X11
+os.environ["QT_QPA_PLATFORM"] = "xcb"
 
 try:
     import cv2

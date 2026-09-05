@@ -12,9 +12,14 @@ Usage:
 """
 
 import sys
+import os
 import time
 import argparse
 import random
+
+# Fix Qt/Wayland issues on Linux — force X11
+os.environ["QT_QPA_PLATFORM"] = "xcb"
+os.environ["OPENCV_VIDEOIO_PRIORITY_BACKEND"] = "1"
 
 try:
     import cv2
