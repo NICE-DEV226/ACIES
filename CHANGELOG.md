@@ -12,6 +12,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Degradation detector**: 3 consecutive low-clarity steps triggers early stop
 - New result fields: `abstained`, `degraded`, `cost_budget_exceeded`, `avg_clarity`
 - Stress test suite: `test/stress_test_robust.py`
+- **YOLO + ACIES integration**: adaptive object detection (`demo_yolo.py`)
+- YOLO benchmark: fixed vs adaptive resolution comparison (`benchmark_yolo.py`)
 
 ### Changed
 - `APCResult.decision` returns `-1` when abstaining (was always 0 or 1)
