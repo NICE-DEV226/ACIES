@@ -1,0 +1,4188 @@
+{
+  "session": {
+    "timestamp": "2026-09-05T20:01:45.865490",
+    "total_frames": 100,
+    "config": {
+      "confidence_threshold": 0.85,
+      "max_cost_per_image": 500,
+      "degradation_patience": 3
+    }
+  },
+  "summary": {
+    "n_runs": 100,
+    "avg_cost": 529.73,
+    "avg_accuracy": 0.47,
+    "avg_latency_ms": 53.4,
+    "avg_epc": 1127.08,
+    "learner": {
+      "actions": {
+        "0": {
+          "mean_clarity": 0.5,
+          "confidence": 0.8,
+          "n_obs": 2
+        },
+        "1": {
+          "mean_clarity": 0.5,
+          "confidence": 0.8,
+          "n_obs": 2
+        },
+        "2": {
+          "mean_clarity": 0.5,
+          "confidence": 0.8,
+          "n_obs": 2
+        },
+        "3": {
+          "mean_clarity": 0.5,
+          "confidence": 0.8,
+          "n_obs": 2
+        },
+        "4": {
+          "mean_clarity": 0.5,
+          "confidence": 0.8,
+          "n_obs": 2
+        },
+        "5": {
+          "mean_clarity": 0.435,
+          "confidence": 0.996,
+          "n_obs": 269
+        },
+        "6": {
+          "mean_clarity": 0.5,
+          "confidence": 0.8,
+          "n_obs": 2
+        },
+        "7": {
+          "mean_clarity": 0.5,
+          "confidence": 0.8,
+          "n_obs": 2
+        },
+        "8": {
+          "mean_clarity": 0.5,
+          "confidence": 0.8,
+          "n_obs": 2
+        }
+      },
+      "exploration_ratio": 0.007
+    },
+    "safety": {
+      "n_violations": 92,
+      "n_emergency": 380,
+      "n_abstentions": 0,
+      "mean_risk": 4.095990235554893,
+      "max_risk_ever": 4.990169016099358
+    },
+    "conviction": {
+      "in_zone": false,
+      "zone_steps": 0,
+      "zone_entries": 0,
+      "oscillation_count": 0,
+      "last_confidence": 0.6998
+    }
+  },
+  "frames": [
+    {
+      "frame": 1,
+      "timestamp": "2026-09-05T20:01:36.916276",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.494,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.55,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.855
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.118,
+      "image_name_top3": [
+        [
+          "person",
+          0.118
+        ],
+        [
+          "vehicle",
+          0.098
+        ],
+        [
+          "animal",
+          0.098
+        ]
+      ],
+      "frame_brightness": 0.548,
+      "frame_contrast": 0.356,
+      "frame_edges": 0.018,
+      "process_time_ms": 1135.7
+    },
+    {
+      "frame": 2,
+      "timestamp": "2026-09-05T20:01:37.175153",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.541,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.538,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.873
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.133,
+      "image_name_top3": [
+        [
+          "person",
+          0.133
+        ],
+        [
+          "vehicle",
+          0.096
+        ],
+        [
+          "animal",
+          0.096
+        ]
+      ],
+      "frame_brightness": 0.548,
+      "frame_contrast": 0.356,
+      "frame_edges": 0.018,
+      "process_time_ms": 96.9
+    },
+    {
+      "frame": 3,
+      "timestamp": "2026-09-05T20:01:37.272470",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.471,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.549,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.839
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.146,
+      "image_name_top3": [
+        [
+          "person",
+          0.146
+        ],
+        [
+          "vehicle",
+          0.095
+        ],
+        [
+          "animal",
+          0.095
+        ]
+      ],
+      "frame_brightness": 0.548,
+      "frame_contrast": 0.356,
+      "frame_edges": 0.018,
+      "process_time_ms": 62.6
+    },
+    {
+      "frame": 4,
+      "timestamp": "2026-09-05T20:01:37.357243",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.476,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.524,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.844
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.157,
+      "image_name_top3": [
+        [
+          "person",
+          0.157
+        ],
+        [
+          "vehicle",
+          0.094
+        ],
+        [
+          "animal",
+          0.094
+        ]
+      ],
+      "frame_brightness": 0.548,
+      "frame_contrast": 0.355,
+      "frame_edges": 0.018,
+      "process_time_ms": 51.7
+    },
+    {
+      "frame": 5,
+      "timestamp": "2026-09-05T20:01:37.438520",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.245,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.559,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.803
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.163,
+      "image_name_top3": [
+        [
+          "person",
+          0.163
+        ],
+        [
+          "vehicle",
+          0.093
+        ],
+        [
+          "animal",
+          0.093
+        ]
+      ],
+      "frame_brightness": 0.548,
+      "frame_contrast": 0.355,
+      "frame_edges": 0.018,
+      "process_time_ms": 49.4
+    },
+    {
+      "frame": 6,
+      "timestamp": "2026-09-05T20:01:37.520922",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.743,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.563,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.811
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.199,
+      "image_name_top3": [
+        [
+          "person",
+          0.199
+        ],
+        [
+          "vehicle",
+          0.089
+        ],
+        [
+          "animal",
+          0.089
+        ]
+      ],
+      "frame_brightness": 0.547,
+      "frame_contrast": 0.357,
+      "frame_edges": 0.019,
+      "process_time_ms": 48.9
+    },
+    {
+      "frame": 7,
+      "timestamp": "2026-09-05T20:01:37.601756",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.534,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.561,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.86
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.205,
+      "image_name_top3": [
+        [
+          "person",
+          0.205
+        ],
+        [
+          "vehicle",
+          0.088
+        ],
+        [
+          "animal",
+          0.088
+        ]
+      ],
+      "frame_brightness": 0.547,
+      "frame_contrast": 0.356,
+      "frame_edges": 0.019,
+      "process_time_ms": 48.1
+    },
+    {
+      "frame": 8,
+      "timestamp": "2026-09-05T20:01:37.689028",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.776,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.519,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.738
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.237,
+      "image_name_top3": [
+        [
+          "person",
+          0.237
+        ],
+        [
+          "vehicle",
+          0.085
+        ],
+        [
+          "animal",
+          0.085
+        ]
+      ],
+      "frame_brightness": 0.547,
+      "frame_contrast": 0.356,
+      "frame_edges": 0.018,
+      "process_time_ms": 55.7
+    },
+    {
+      "frame": 9,
+      "timestamp": "2026-09-05T20:01:37.784052",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.547,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.55,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.796
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.24,
+      "image_name_top3": [
+        [
+          "person",
+          0.24
+        ],
+        [
+          "vehicle",
+          0.084
+        ],
+        [
+          "animal",
+          0.084
+        ]
+      ],
+      "frame_brightness": 0.547,
+      "frame_contrast": 0.356,
+      "frame_edges": 0.019,
+      "process_time_ms": 62.9
+    },
+    {
+      "frame": 10,
+      "timestamp": "2026-09-05T20:01:37.863957",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.244,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.559,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.794
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.24,
+      "image_name_top3": [
+        [
+          "person",
+          0.24
+        ],
+        [
+          "vehicle",
+          0.084
+        ],
+        [
+          "animal",
+          0.084
+        ]
+      ],
+      "frame_brightness": 0.547,
+      "frame_contrast": 0.356,
+      "frame_edges": 0.018,
+      "process_time_ms": 48.5
+    },
+    {
+      "frame": 11,
+      "timestamp": "2026-09-05T20:01:37.946413",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.236,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.532,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.854
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.24,
+      "image_name_top3": [
+        [
+          "person",
+          0.24
+        ],
+        [
+          "vehicle",
+          0.084
+        ],
+        [
+          "animal",
+          0.084
+        ]
+      ],
+      "frame_brightness": 0.547,
+      "frame_contrast": 0.356,
+      "frame_edges": 0.019,
+      "process_time_ms": 48.3
+    },
+    {
+      "frame": 12,
+      "timestamp": "2026-09-05T20:01:38.027054",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.46,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.549,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.86
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.243,
+      "image_name_top3": [
+        [
+          "person",
+          0.243
+        ],
+        [
+          "vehicle",
+          0.084
+        ],
+        [
+          "animal",
+          0.084
+        ]
+      ],
+      "frame_brightness": 0.547,
+      "frame_contrast": 0.357,
+      "frame_edges": 0.018,
+      "process_time_ms": 49.4
+    },
+    {
+      "frame": 13,
+      "timestamp": "2026-09-05T20:01:38.118032",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.521,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.537,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.866
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.245,
+      "image_name_top3": [
+        [
+          "person",
+          0.245
+        ],
+        [
+          "vehicle",
+          0.084
+        ],
+        [
+          "animal",
+          0.084
+        ]
+      ],
+      "frame_brightness": 0.547,
+      "frame_contrast": 0.357,
+      "frame_edges": 0.018,
+      "process_time_ms": 56.7
+    },
+    {
+      "frame": 14,
+      "timestamp": "2026-09-05T20:01:38.199332",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.528,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.575,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.869
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.248,
+      "image_name_top3": [
+        [
+          "person",
+          0.248
+        ],
+        [
+          "vehicle",
+          0.084
+        ],
+        [
+          "animal",
+          0.084
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.357,
+      "frame_edges": 0.018,
+      "process_time_ms": 49.9
+    },
+    {
+      "frame": 15,
+      "timestamp": "2026-09-05T20:01:38.287678",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.746,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.546,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.732
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.268,
+      "image_name_top3": [
+        [
+          "person",
+          0.268
+        ],
+        [
+          "vehicle",
+          0.081
+        ],
+        [
+          "animal",
+          0.081
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.357,
+      "frame_edges": 0.018,
+      "process_time_ms": 56.5
+    },
+    {
+      "frame": 16,
+      "timestamp": "2026-09-05T20:01:38.369667",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.479,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.551,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.84
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.269,
+      "image_name_top3": [
+        [
+          "person",
+          0.269
+        ],
+        [
+          "vehicle",
+          0.081
+        ],
+        [
+          "animal",
+          0.081
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.357,
+      "frame_edges": 0.018,
+      "process_time_ms": 49.7
+    },
+    {
+      "frame": 17,
+      "timestamp": "2026-09-05T20:01:38.448508",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.51,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.527,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.825
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.27,
+      "image_name_top3": [
+        [
+          "person",
+          0.27
+        ],
+        [
+          "vehicle",
+          0.081
+        ],
+        [
+          "animal",
+          0.081
+        ]
+      ],
+      "frame_brightness": 0.547,
+      "frame_contrast": 0.357,
+      "frame_edges": 0.018,
+      "process_time_ms": 46.6
+    },
+    {
+      "frame": 18,
+      "timestamp": "2026-09-05T20:01:38.529859",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.512,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.577,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.866
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.271,
+      "image_name_top3": [
+        [
+          "person",
+          0.271
+        ],
+        [
+          "vehicle",
+          0.081
+        ],
+        [
+          "animal",
+          0.081
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.357,
+      "frame_edges": 0.019,
+      "process_time_ms": 47.8
+    },
+    {
+      "frame": 19,
+      "timestamp": "2026-09-05T20:01:38.617192",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.778,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.518,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.801
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.289,
+      "image_name_top3": [
+        [
+          "person",
+          0.289
+        ],
+        [
+          "vehicle",
+          0.079
+        ],
+        [
+          "animal",
+          0.079
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.357,
+      "frame_edges": 0.018,
+      "process_time_ms": 55.9
+    },
+    {
+      "frame": 20,
+      "timestamp": "2026-09-05T20:01:38.767497",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.25,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.544,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.778
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.287,
+      "image_name_top3": [
+        [
+          "person",
+          0.287
+        ],
+        [
+          "vehicle",
+          0.079
+        ],
+        [
+          "animal",
+          0.079
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.357,
+      "frame_edges": 0.018,
+      "process_time_ms": 116.6
+    },
+    {
+      "frame": 21,
+      "timestamp": "2026-09-05T20:01:38.851054",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.753,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.542,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.791
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.302,
+      "image_name_top3": [
+        [
+          "person",
+          0.302
+        ],
+        [
+          "vehicle",
+          0.078
+        ],
+        [
+          "animal",
+          0.078
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.357,
+      "frame_edges": 0.018,
+      "process_time_ms": 48.8
+    },
+    {
+      "frame": 22,
+      "timestamp": "2026-09-05T20:01:38.936647",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.507,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.569,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.871
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.302,
+      "image_name_top3": [
+        [
+          "person",
+          0.302
+        ],
+        [
+          "vehicle",
+          0.078
+        ],
+        [
+          "animal",
+          0.078
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.357,
+      "frame_edges": 0.018,
+      "process_time_ms": 53.2
+    },
+    {
+      "frame": 23,
+      "timestamp": "2026-09-05T20:01:39.020616",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.738,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.57,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.84
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.315,
+      "image_name_top3": [
+        [
+          "person",
+          0.315
+        ],
+        [
+          "vehicle",
+          0.076
+        ],
+        [
+          "animal",
+          0.076
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.358,
+      "frame_edges": 0.018,
+      "process_time_ms": 50.6
+    },
+    {
+      "frame": 24,
+      "timestamp": "2026-09-05T20:01:39.101942",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.735,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.567,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.825
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.328,
+      "image_name_top3": [
+        [
+          "person",
+          0.328
+        ],
+        [
+          "vehicle",
+          0.075
+        ],
+        [
+          "animal",
+          0.075
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.358,
+      "frame_edges": 0.018,
+      "process_time_ms": 47.7
+    },
+    {
+      "frame": 25,
+      "timestamp": "2026-09-05T20:01:39.188222",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.751,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.543,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.748
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.34,
+      "image_name_top3": [
+        [
+          "person",
+          0.34
+        ],
+        [
+          "vehicle",
+          0.073
+        ],
+        [
+          "animal",
+          0.073
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.359,
+      "frame_edges": 0.019,
+      "process_time_ms": 54.4
+    },
+    {
+      "frame": 26,
+      "timestamp": "2026-09-05T20:01:39.276620",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.617,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.387,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.756
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.348,
+      "image_name_top3": [
+        [
+          "person",
+          0.348
+        ],
+        [
+          "vehicle",
+          0.072
+        ],
+        [
+          "animal",
+          0.072
+        ]
+      ],
+      "frame_brightness": 0.54,
+      "frame_contrast": 0.371,
+      "frame_edges": 0.017,
+      "process_time_ms": 57.4
+    },
+    {
+      "frame": 27,
+      "timestamp": "2026-09-05T20:01:39.357414",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.498,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.519,
+      "n_detections": 2,
+      "detection_classes": [
+        "person",
+        "person"
+      ],
+      "detection_confs": [
+        0.572,
+        0.352
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.346,
+      "image_name_top3": [
+        [
+          "person",
+          0.346
+        ],
+        [
+          "vehicle",
+          0.073
+        ],
+        [
+          "animal",
+          0.073
+        ]
+      ],
+      "frame_brightness": 0.528,
+      "frame_contrast": 0.37,
+      "frame_edges": 0.019,
+      "process_time_ms": 47.0
+    },
+    {
+      "frame": 28,
+      "timestamp": "2026-09-05T20:01:39.436872",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.704,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.577,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.762
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.356,
+      "image_name_top3": [
+        [
+          "person",
+          0.356
+        ],
+        [
+          "vehicle",
+          0.072
+        ],
+        [
+          "animal",
+          0.072
+        ]
+      ],
+      "frame_brightness": 0.512,
+      "frame_contrast": 0.382,
+      "frame_edges": 0.017,
+      "process_time_ms": 46.5
+    },
+    {
+      "frame": 29,
+      "timestamp": "2026-09-05T20:01:39.523723",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.261,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.57,
+      "n_detections": 2,
+      "detection_classes": [
+        "person",
+        "person"
+      ],
+      "detection_confs": [
+        0.593,
+        0.374
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.353,
+      "image_name_top3": [
+        [
+          "person",
+          0.353
+        ],
+        [
+          "vehicle",
+          0.072
+        ],
+        [
+          "animal",
+          0.072
+        ]
+      ],
+      "frame_brightness": 0.476,
+      "frame_contrast": 0.411,
+      "frame_edges": 0.018,
+      "process_time_ms": 53.8
+    },
+    {
+      "frame": 30,
+      "timestamp": "2026-09-05T20:01:39.608333",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.281,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.575,
+      "n_detections": 2,
+      "detection_classes": [
+        "person",
+        "person"
+      ],
+      "detection_confs": [
+        0.587,
+        0.31
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.351,
+      "image_name_top3": [
+        [
+          "person",
+          0.351
+        ],
+        [
+          "vehicle",
+          0.072
+        ],
+        [
+          "animal",
+          0.072
+        ]
+      ],
+      "frame_brightness": 0.472,
+      "frame_contrast": 0.425,
+      "frame_edges": 0.02,
+      "process_time_ms": 50.7
+    },
+    {
+      "frame": 31,
+      "timestamp": "2026-09-05T20:01:39.701973",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.688,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.434,
+      "n_detections": 3,
+      "detection_classes": [
+        "person",
+        "person",
+        "remote"
+      ],
+      "detection_confs": [
+        0.799,
+        0.282,
+        0.278
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.36,
+      "image_name_top3": [
+        [
+          "person",
+          0.36
+        ],
+        [
+          "vehicle",
+          0.071
+        ],
+        [
+          "animal",
+          0.071
+        ]
+      ],
+      "frame_brightness": 0.508,
+      "frame_contrast": 0.454,
+      "frame_edges": 0.021,
+      "process_time_ms": 60.4
+    },
+    {
+      "frame": 32,
+      "timestamp": "2026-09-05T20:01:39.792326",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.497,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.477,
+      "n_detections": 4,
+      "detection_classes": [
+        "person",
+        "remote",
+        "remote",
+        "remote"
+      ],
+      "detection_confs": [
+        0.776,
+        0.399,
+        0.369,
+        0.337
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.358,
+      "image_name_top3": [
+        [
+          "person",
+          0.358
+        ],
+        [
+          "vehicle",
+          0.071
+        ],
+        [
+          "animal",
+          0.071
+        ]
+      ],
+      "frame_brightness": 0.537,
+      "frame_contrast": 0.47,
+      "frame_edges": 0.024,
+      "process_time_ms": 58.2
+    },
+    {
+      "frame": 33,
+      "timestamp": "2026-09-05T20:01:39.883261",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.43,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.476,
+      "n_detections": 3,
+      "detection_classes": [
+        "person",
+        "person",
+        "remote"
+      ],
+      "detection_confs": [
+        0.538,
+        0.379,
+        0.333
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.36,
+      "image_name_top3": [
+        [
+          "person",
+          0.36
+        ],
+        [
+          "vehicle",
+          0.071
+        ],
+        [
+          "animal",
+          0.071
+        ]
+      ],
+      "frame_brightness": 0.54,
+      "frame_contrast": 0.474,
+      "frame_edges": 0.024,
+      "process_time_ms": 57.0
+    },
+    {
+      "frame": 34,
+      "timestamp": "2026-09-05T20:01:39.963469",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.517,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.49,
+      "n_detections": 2,
+      "detection_classes": [
+        "remote",
+        "person"
+      ],
+      "detection_confs": [
+        0.576,
+        0.56
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.354,
+      "image_name_top3": [
+        [
+          "person",
+          0.354
+        ],
+        [
+          "electronics",
+          0.076
+        ],
+        [
+          "vehicle",
+          0.071
+        ]
+      ],
+      "frame_brightness": 0.537,
+      "frame_contrast": 0.475,
+      "frame_edges": 0.024,
+      "process_time_ms": 48.0
+    },
+    {
+      "frame": 35,
+      "timestamp": "2026-09-05T20:01:40.047560",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.495,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.469,
+      "n_detections": 3,
+      "detection_classes": [
+        "remote",
+        "person",
+        "person"
+      ],
+      "detection_confs": [
+        0.679,
+        0.522,
+        0.33
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.347,
+      "image_name_top3": [
+        [
+          "person",
+          0.347
+        ],
+        [
+          "electronics",
+          0.081
+        ],
+        [
+          "vehicle",
+          0.071
+        ]
+      ],
+      "frame_brightness": 0.536,
+      "frame_contrast": 0.476,
+      "frame_edges": 0.024,
+      "process_time_ms": 50.4
+    },
+    {
+      "frame": 36,
+      "timestamp": "2026-09-05T20:01:40.130296",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.58,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.461,
+      "n_detections": 3,
+      "detection_classes": [
+        "remote",
+        "person",
+        "person"
+      ],
+      "detection_confs": [
+        0.56,
+        0.355,
+        0.349
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.341,
+      "image_name_top3": [
+        [
+          "person",
+          0.341
+        ],
+        [
+          "electronics",
+          0.092
+        ],
+        [
+          "vehicle",
+          0.071
+        ]
+      ],
+      "frame_brightness": 0.535,
+      "frame_contrast": 0.476,
+      "frame_edges": 0.024,
+      "process_time_ms": 50.8
+    },
+    {
+      "frame": 37,
+      "timestamp": "2026-09-05T20:01:40.215846",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.587,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.471,
+      "n_detections": 2,
+      "detection_classes": [
+        "remote",
+        "person"
+      ],
+      "detection_confs": [
+        0.623,
+        0.496
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.335,
+      "image_name_top3": [
+        [
+          "person",
+          0.335
+        ],
+        [
+          "electronics",
+          0.103
+        ],
+        [
+          "vehicle",
+          0.07
+        ]
+      ],
+      "frame_brightness": 0.534,
+      "frame_contrast": 0.475,
+      "frame_edges": 0.024,
+      "process_time_ms": 52.2
+    },
+    {
+      "frame": 38,
+      "timestamp": "2026-09-05T20:01:40.300621",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.584,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.469,
+      "n_detections": 2,
+      "detection_classes": [
+        "remote",
+        "person"
+      ],
+      "detection_confs": [
+        0.64,
+        0.355
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.329,
+      "image_name_top3": [
+        [
+          "person",
+          0.329
+        ],
+        [
+          "electronics",
+          0.113
+        ],
+        [
+          "vehicle",
+          0.07
+        ]
+      ],
+      "frame_brightness": 0.537,
+      "frame_contrast": 0.474,
+      "frame_edges": 0.024,
+      "process_time_ms": 50.9
+    },
+    {
+      "frame": 39,
+      "timestamp": "2026-09-05T20:01:40.387759",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.555,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.485,
+      "n_detections": 4,
+      "detection_classes": [
+        "remote",
+        "remote",
+        "person",
+        "person"
+      ],
+      "detection_confs": [
+        0.661,
+        0.358,
+        0.302,
+        0.271
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.323,
+      "image_name_top3": [
+        [
+          "person",
+          0.323
+        ],
+        [
+          "electronics",
+          0.122
+        ],
+        [
+          "vehicle",
+          0.069
+        ]
+      ],
+      "frame_brightness": 0.537,
+      "frame_contrast": 0.473,
+      "frame_edges": 0.023,
+      "process_time_ms": 54.2
+    },
+    {
+      "frame": 40,
+      "timestamp": "2026-09-05T20:01:40.470557",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.476,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.493,
+      "n_detections": 3,
+      "detection_classes": [
+        "person",
+        "remote",
+        "remote"
+      ],
+      "detection_confs": [
+        0.494,
+        0.494,
+        0.277
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.322,
+      "image_name_top3": [
+        [
+          "person",
+          0.322
+        ],
+        [
+          "electronics",
+          0.121
+        ],
+        [
+          "vehicle",
+          0.07
+        ]
+      ],
+      "frame_brightness": 0.538,
+      "frame_contrast": 0.473,
+      "frame_edges": 0.023,
+      "process_time_ms": 50.4
+    },
+    {
+      "frame": 41,
+      "timestamp": "2026-09-05T20:01:40.557321",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.476,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.48,
+      "n_detections": 3,
+      "detection_classes": [
+        "person",
+        "person",
+        "person"
+      ],
+      "detection_confs": [
+        0.446,
+        0.35,
+        0.331
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.322,
+      "image_name_top3": [
+        [
+          "person",
+          0.322
+        ],
+        [
+          "electronics",
+          0.12
+        ],
+        [
+          "vehicle",
+          0.07
+        ]
+      ],
+      "frame_brightness": 0.542,
+      "frame_contrast": 0.472,
+      "frame_edges": 0.023,
+      "process_time_ms": 52.1
+    },
+    {
+      "frame": 42,
+      "timestamp": "2026-09-05T20:01:40.703054",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.515,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.481,
+      "n_detections": 3,
+      "detection_classes": [
+        "person",
+        "person",
+        "remote"
+      ],
+      "detection_confs": [
+        0.402,
+        0.372,
+        0.309
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.322,
+      "image_name_top3": [
+        [
+          "person",
+          0.322
+        ],
+        [
+          "electronics",
+          0.119
+        ],
+        [
+          "vehicle",
+          0.07
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.471,
+      "frame_edges": 0.023,
+      "process_time_ms": 112.8
+    },
+    {
+      "frame": 43,
+      "timestamp": "2026-09-05T20:01:40.792789",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.488,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.471,
+      "n_detections": 3,
+      "detection_classes": [
+        "remote",
+        "person",
+        "person"
+      ],
+      "detection_confs": [
+        0.443,
+        0.438,
+        0.265
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.317,
+      "image_name_top3": [
+        [
+          "person",
+          0.317
+        ],
+        [
+          "electronics",
+          0.123
+        ],
+        [
+          "vehicle",
+          0.07
+        ]
+      ],
+      "frame_brightness": 0.548,
+      "frame_contrast": 0.47,
+      "frame_edges": 0.022,
+      "process_time_ms": 56.4
+    },
+    {
+      "frame": 44,
+      "timestamp": "2026-09-05T20:01:40.878650",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.435,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.482,
+      "n_detections": 3,
+      "detection_classes": [
+        "person",
+        "remote",
+        "remote"
+      ],
+      "detection_confs": [
+        0.633,
+        0.373,
+        0.276
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.319,
+      "image_name_top3": [
+        [
+          "person",
+          0.319
+        ],
+        [
+          "electronics",
+          0.121
+        ],
+        [
+          "vehicle",
+          0.07
+        ]
+      ],
+      "frame_brightness": 0.553,
+      "frame_contrast": 0.467,
+      "frame_edges": 0.022,
+      "process_time_ms": 53.1
+    },
+    {
+      "frame": 45,
+      "timestamp": "2026-09-05T20:01:40.962911",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.482,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.494,
+      "n_detections": 2,
+      "detection_classes": [
+        "person",
+        "remote"
+      ],
+      "detection_confs": [
+        0.677,
+        0.265
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.319,
+      "image_name_top3": [
+        [
+          "person",
+          0.319
+        ],
+        [
+          "electronics",
+          0.121
+        ],
+        [
+          "vehicle",
+          0.07
+        ]
+      ],
+      "frame_brightness": 0.557,
+      "frame_contrast": 0.466,
+      "frame_edges": 0.022,
+      "process_time_ms": 48.8
+    },
+    {
+      "frame": 46,
+      "timestamp": "2026-09-05T20:01:41.048862",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.56,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.48,
+      "n_detections": 4,
+      "detection_classes": [
+        "person",
+        "remote",
+        "train",
+        "person"
+      ],
+      "detection_confs": [
+        0.503,
+        0.477,
+        0.257,
+        0.253
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.323,
+      "image_name_top3": [
+        [
+          "person",
+          0.323
+        ],
+        [
+          "electronics",
+          0.119
+        ],
+        [
+          "vehicle",
+          0.07
+        ]
+      ],
+      "frame_brightness": 0.565,
+      "frame_contrast": 0.464,
+      "frame_edges": 0.022,
+      "process_time_ms": 51.6
+    },
+    {
+      "frame": 47,
+      "timestamp": "2026-09-05T20:01:41.129051",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.528,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.485,
+      "n_detections": 2,
+      "detection_classes": [
+        "person",
+        "person"
+      ],
+      "detection_confs": [
+        0.501,
+        0.317
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.323,
+      "image_name_top3": [
+        [
+          "person",
+          0.323
+        ],
+        [
+          "electronics",
+          0.119
+        ],
+        [
+          "vehicle",
+          0.07
+        ]
+      ],
+      "frame_brightness": 0.577,
+      "frame_contrast": 0.46,
+      "frame_edges": 0.022,
+      "process_time_ms": 47.3
+    },
+    {
+      "frame": 48,
+      "timestamp": "2026-09-05T20:01:41.209351",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.541,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.462,
+      "n_detections": 3,
+      "detection_classes": [
+        "person",
+        "person",
+        "remote"
+      ],
+      "detection_confs": [
+        0.545,
+        0.474,
+        0.275
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.322,
+      "image_name_top3": [
+        [
+          "person",
+          0.322
+        ],
+        [
+          "electronics",
+          0.118
+        ],
+        [
+          "vehicle",
+          0.07
+        ]
+      ],
+      "frame_brightness": 0.565,
+      "frame_contrast": 0.45,
+      "frame_edges": 0.021,
+      "process_time_ms": 47.8
+    },
+    {
+      "frame": 49,
+      "timestamp": "2026-09-05T20:01:41.299288",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.354,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.45,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.695
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.323,
+      "image_name_top3": [
+        [
+          "person",
+          0.323
+        ],
+        [
+          "electronics",
+          0.117
+        ],
+        [
+          "vehicle",
+          0.07
+        ]
+      ],
+      "frame_brightness": 0.553,
+      "frame_contrast": 0.44,
+      "frame_edges": 0.021,
+      "process_time_ms": 57.2
+    },
+    {
+      "frame": 50,
+      "timestamp": "2026-09-05T20:01:41.381930",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.676,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.439,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.809
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.329,
+      "image_name_top3": [
+        [
+          "person",
+          0.329
+        ],
+        [
+          "electronics",
+          0.116
+        ],
+        [
+          "vehicle",
+          0.069
+        ]
+      ],
+      "frame_brightness": 0.545,
+      "frame_contrast": 0.434,
+      "frame_edges": 0.022,
+      "process_time_ms": 49.8
+    },
+    {
+      "frame": 51,
+      "timestamp": "2026-09-05T20:01:41.463562",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.561,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.455,
+      "n_detections": 2,
+      "detection_classes": [
+        "person",
+        "remote"
+      ],
+      "detection_confs": [
+        0.755,
+        0.322
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.333,
+      "image_name_top3": [
+        [
+          "person",
+          0.333
+        ],
+        [
+          "electronics",
+          0.115
+        ],
+        [
+          "vehicle",
+          0.069
+        ]
+      ],
+      "frame_brightness": 0.55,
+      "frame_contrast": 0.431,
+      "frame_edges": 0.023,
+      "process_time_ms": 49.9
+    },
+    {
+      "frame": 52,
+      "timestamp": "2026-09-05T20:01:41.549046",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.594,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.452,
+      "n_detections": 3,
+      "detection_classes": [
+        "person",
+        "remote",
+        "remote"
+      ],
+      "detection_confs": [
+        0.734,
+        0.424,
+        0.293
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.337,
+      "image_name_top3": [
+        [
+          "person",
+          0.337
+        ],
+        [
+          "electronics",
+          0.114
+        ],
+        [
+          "vehicle",
+          0.069
+        ]
+      ],
+      "frame_brightness": 0.553,
+      "frame_contrast": 0.429,
+      "frame_edges": 0.02,
+      "process_time_ms": 51.5
+    },
+    {
+      "frame": 53,
+      "timestamp": "2026-09-05T20:01:41.632954",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.56,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.435,
+      "n_detections": 2,
+      "detection_classes": [
+        "person",
+        "remote"
+      ],
+      "detection_confs": [
+        0.83,
+        0.282
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.34,
+      "image_name_top3": [
+        [
+          "person",
+          0.34
+        ],
+        [
+          "electronics",
+          0.113
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.558,
+      "frame_contrast": 0.427,
+      "frame_edges": 0.02,
+      "process_time_ms": 50.8
+    },
+    {
+      "frame": 54,
+      "timestamp": "2026-09-05T20:01:41.717224",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.557,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.441,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.818
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.344,
+      "image_name_top3": [
+        [
+          "person",
+          0.344
+        ],
+        [
+          "electronics",
+          0.112
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.56,
+      "frame_contrast": 0.426,
+      "frame_edges": 0.022,
+      "process_time_ms": 51.3
+    },
+    {
+      "frame": 55,
+      "timestamp": "2026-09-05T20:01:41.799988",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.524,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.447,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.778
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.343,
+      "image_name_top3": [
+        [
+          "person",
+          0.343
+        ],
+        [
+          "electronics",
+          0.111
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.555,
+      "frame_contrast": 0.421,
+      "frame_edges": 0.021,
+      "process_time_ms": 50.8
+    },
+    {
+      "frame": 56,
+      "timestamp": "2026-09-05T20:01:41.883451",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.564,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.441,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.858
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.346,
+      "image_name_top3": [
+        [
+          "person",
+          0.346
+        ],
+        [
+          "electronics",
+          0.11
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.557,
+      "frame_contrast": 0.42,
+      "frame_edges": 0.021,
+      "process_time_ms": 51.1
+    },
+    {
+      "frame": 57,
+      "timestamp": "2026-09-05T20:01:41.964924",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.461,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.441,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.758
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.346,
+      "image_name_top3": [
+        [
+          "person",
+          0.346
+        ],
+        [
+          "electronics",
+          0.11
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.56,
+      "frame_contrast": 0.419,
+      "frame_edges": 0.02,
+      "process_time_ms": 49.1
+    },
+    {
+      "frame": 58,
+      "timestamp": "2026-09-05T20:01:42.047223",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.42,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.446,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.792
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.347,
+      "image_name_top3": [
+        [
+          "person",
+          0.347
+        ],
+        [
+          "electronics",
+          0.109
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.553,
+      "frame_contrast": 0.415,
+      "frame_edges": 0.019,
+      "process_time_ms": 49.0
+    },
+    {
+      "frame": 59,
+      "timestamp": "2026-09-05T20:01:42.129508",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.558,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.425,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.745
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.35,
+      "image_name_top3": [
+        [
+          "person",
+          0.35
+        ],
+        [
+          "electronics",
+          0.108
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.557,
+      "frame_contrast": 0.413,
+      "frame_edges": 0.02,
+      "process_time_ms": 49.2
+    },
+    {
+      "frame": 60,
+      "timestamp": "2026-09-05T20:01:42.283819",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.418,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.429,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.751
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.351,
+      "image_name_top3": [
+        [
+          "person",
+          0.351
+        ],
+        [
+          "electronics",
+          0.107
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.559,
+      "frame_contrast": 0.412,
+      "frame_edges": 0.02,
+      "process_time_ms": 120.7
+    },
+    {
+      "frame": 61,
+      "timestamp": "2026-09-05T20:01:42.366115",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.403,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.393,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.791
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.352,
+      "image_name_top3": [
+        [
+          "person",
+          0.352
+        ],
+        [
+          "electronics",
+          0.107
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.548,
+      "frame_contrast": 0.406,
+      "frame_edges": 0.02,
+      "process_time_ms": 50.0
+    },
+    {
+      "frame": 62,
+      "timestamp": "2026-09-05T20:01:42.444564",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.483,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.421,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.802
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.351,
+      "image_name_top3": [
+        [
+          "person",
+          0.351
+        ],
+        [
+          "electronics",
+          0.107
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.55,
+      "frame_contrast": 0.406,
+      "frame_edges": 0.02,
+      "process_time_ms": 46.4
+    },
+    {
+      "frame": 63,
+      "timestamp": "2026-09-05T20:01:42.525668",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.483,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.425,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.77
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.35,
+      "image_name_top3": [
+        [
+          "person",
+          0.35
+        ],
+        [
+          "electronics",
+          0.106
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.552,
+      "frame_contrast": 0.404,
+      "frame_edges": 0.02,
+      "process_time_ms": 48.5
+    },
+    {
+      "frame": 64,
+      "timestamp": "2026-09-05T20:01:42.604722",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.464,
+      "abstained": true,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.415,
+      "n_detections": 3,
+      "detection_classes": [
+        "person",
+        "cell phone",
+        "remote"
+      ],
+      "detection_confs": [
+        0.795,
+        0.284,
+        0.259
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.349,
+      "image_name_top3": [
+        [
+          "person",
+          0.349
+        ],
+        [
+          "electronics",
+          0.106
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.552,
+      "frame_contrast": 0.404,
+      "frame_edges": 0.021,
+      "process_time_ms": 47.1
+    },
+    {
+      "frame": 65,
+      "timestamp": "2026-09-05T20:01:42.689422",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.387,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.422,
+      "n_detections": 2,
+      "detection_classes": [
+        "person",
+        "cell phone"
+      ],
+      "detection_confs": [
+        0.812,
+        0.276
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.35,
+      "image_name_top3": [
+        [
+          "person",
+          0.35
+        ],
+        [
+          "electronics",
+          0.105
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.554,
+      "frame_contrast": 0.403,
+      "frame_edges": 0.02,
+      "process_time_ms": 51.2
+    },
+    {
+      "frame": 66,
+      "timestamp": "2026-09-05T20:01:42.779476",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.563,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.399,
+      "n_detections": 2,
+      "detection_classes": [
+        "person",
+        "cell phone"
+      ],
+      "detection_confs": [
+        0.822,
+        0.325
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.353,
+      "image_name_top3": [
+        [
+          "person",
+          0.353
+        ],
+        [
+          "electronics",
+          0.104
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.399,
+      "frame_edges": 0.019,
+      "process_time_ms": 57.4
+    },
+    {
+      "frame": 67,
+      "timestamp": "2026-09-05T20:01:42.862756",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.599,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.415,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.756
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.356,
+      "image_name_top3": [
+        [
+          "person",
+          0.356
+        ],
+        [
+          "electronics",
+          0.104
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.399,
+      "frame_edges": 0.019,
+      "process_time_ms": 48.5
+    },
+    {
+      "frame": 68,
+      "timestamp": "2026-09-05T20:01:42.947022",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.384,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.407,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.839
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.356,
+      "image_name_top3": [
+        [
+          "person",
+          0.356
+        ],
+        [
+          "electronics",
+          0.103
+        ],
+        [
+          "vehicle",
+          0.068
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.399,
+      "frame_edges": 0.02,
+      "process_time_ms": 49.1
+    },
+    {
+      "frame": 69,
+      "timestamp": "2026-09-05T20:01:43.029407",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.743,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.413,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.821
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.361,
+      "image_name_top3": [
+        [
+          "person",
+          0.361
+        ],
+        [
+          "electronics",
+          0.102
+        ],
+        [
+          "vehicle",
+          0.067
+        ]
+      ],
+      "frame_brightness": 0.544,
+      "frame_contrast": 0.399,
+      "frame_edges": 0.02,
+      "process_time_ms": 48.9
+    },
+    {
+      "frame": 70,
+      "timestamp": "2026-09-05T20:01:43.127899",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.625,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.411,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.774
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.365,
+      "image_name_top3": [
+        [
+          "person",
+          0.365
+        ],
+        [
+          "electronics",
+          0.102
+        ],
+        [
+          "vehicle",
+          0.067
+        ]
+      ],
+      "frame_brightness": 0.544,
+      "frame_contrast": 0.399,
+      "frame_edges": 0.02,
+      "process_time_ms": 66.6
+    },
+    {
+      "frame": 71,
+      "timestamp": "2026-09-05T20:01:43.210326",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.597,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.404,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.777
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.367,
+      "image_name_top3": [
+        [
+          "person",
+          0.367
+        ],
+        [
+          "electronics",
+          0.101
+        ],
+        [
+          "vehicle",
+          0.066
+        ]
+      ],
+      "frame_brightness": 0.545,
+      "frame_contrast": 0.398,
+      "frame_edges": 0.019,
+      "process_time_ms": 48.3
+    },
+    {
+      "frame": 72,
+      "timestamp": "2026-09-05T20:01:43.299141",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.589,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.402,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.856
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.37,
+      "image_name_top3": [
+        [
+          "person",
+          0.37
+        ],
+        [
+          "electronics",
+          0.1
+        ],
+        [
+          "vehicle",
+          0.066
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.398,
+      "frame_edges": 0.02,
+      "process_time_ms": 57.3
+    },
+    {
+      "frame": 73,
+      "timestamp": "2026-09-05T20:01:43.385662",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.417,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.413,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.826
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.371,
+      "image_name_top3": [
+        [
+          "person",
+          0.371
+        ],
+        [
+          "electronics",
+          0.1
+        ],
+        [
+          "vehicle",
+          0.066
+        ]
+      ],
+      "frame_brightness": 0.547,
+      "frame_contrast": 0.397,
+      "frame_edges": 0.019,
+      "process_time_ms": 54.4
+    },
+    {
+      "frame": 74,
+      "timestamp": "2026-09-05T20:01:43.467597",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.259,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.413,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.807
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.369,
+      "image_name_top3": [
+        [
+          "person",
+          0.369
+        ],
+        [
+          "electronics",
+          0.1
+        ],
+        [
+          "vehicle",
+          0.066
+        ]
+      ],
+      "frame_brightness": 0.549,
+      "frame_contrast": 0.397,
+      "frame_edges": 0.019,
+      "process_time_ms": 49.4
+    },
+    {
+      "frame": 75,
+      "timestamp": "2026-09-05T20:01:43.550936",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.563,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.429,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.804
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.372,
+      "image_name_top3": [
+        [
+          "person",
+          0.372
+        ],
+        [
+          "electronics",
+          0.099
+        ],
+        [
+          "vehicle",
+          0.066
+        ]
+      ],
+      "frame_brightness": 0.55,
+      "frame_contrast": 0.396,
+      "frame_edges": 0.02,
+      "process_time_ms": 48.8
+    },
+    {
+      "frame": 76,
+      "timestamp": "2026-09-05T20:01:43.634971",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.415,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.397,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.82
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.372,
+      "image_name_top3": [
+        [
+          "person",
+          0.372
+        ],
+        [
+          "electronics",
+          0.099
+        ],
+        [
+          "vehicle",
+          0.066
+        ]
+      ],
+      "frame_brightness": 0.551,
+      "frame_contrast": 0.396,
+      "frame_edges": 0.021,
+      "process_time_ms": 51.5
+    },
+    {
+      "frame": 77,
+      "timestamp": "2026-09-05T20:01:43.718145",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.72,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.422,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.8
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.376,
+      "image_name_top3": [
+        [
+          "person",
+          0.376
+        ],
+        [
+          "electronics",
+          0.098
+        ],
+        [
+          "vehicle",
+          0.066
+        ]
+      ],
+      "frame_brightness": 0.551,
+      "frame_contrast": 0.396,
+      "frame_edges": 0.02,
+      "process_time_ms": 50.6
+    },
+    {
+      "frame": 78,
+      "timestamp": "2026-09-05T20:01:43.801136",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.403,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.398,
+      "n_detections": 2,
+      "detection_classes": [
+        "person",
+        "cell phone"
+      ],
+      "detection_confs": [
+        0.823,
+        0.256
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.376,
+      "image_name_top3": [
+        [
+          "person",
+          0.376
+        ],
+        [
+          "electronics",
+          0.097
+        ],
+        [
+          "vehicle",
+          0.066
+        ]
+      ],
+      "frame_brightness": 0.551,
+      "frame_contrast": 0.396,
+      "frame_edges": 0.02,
+      "process_time_ms": 51.6
+    },
+    {
+      "frame": 79,
+      "timestamp": "2026-09-05T20:01:43.892507",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.741,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.413,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.795
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.381,
+      "image_name_top3": [
+        [
+          "person",
+          0.381
+        ],
+        [
+          "electronics",
+          0.097
+        ],
+        [
+          "vehicle",
+          0.065
+        ]
+      ],
+      "frame_brightness": 0.551,
+      "frame_contrast": 0.396,
+      "frame_edges": 0.019,
+      "process_time_ms": 58.9
+    },
+    {
+      "frame": 80,
+      "timestamp": "2026-09-05T20:01:43.977549",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.737,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.415,
+      "n_detections": 2,
+      "detection_classes": [
+        "person",
+        "cell phone"
+      ],
+      "detection_confs": [
+        0.825,
+        0.297
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.384,
+      "image_name_top3": [
+        [
+          "person",
+          0.384
+        ],
+        [
+          "electronics",
+          0.096
+        ],
+        [
+          "vehicle",
+          0.065
+        ]
+      ],
+      "frame_brightness": 0.551,
+      "frame_contrast": 0.396,
+      "frame_edges": 0.02,
+      "process_time_ms": 52.1
+    },
+    {
+      "frame": 81,
+      "timestamp": "2026-09-05T20:01:44.078771",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.608,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.42,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.813
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.387,
+      "image_name_top3": [
+        [
+          "person",
+          0.387
+        ],
+        [
+          "electronics",
+          0.095
+        ],
+        [
+          "vehicle",
+          0.065
+        ]
+      ],
+      "frame_brightness": 0.552,
+      "frame_contrast": 0.395,
+      "frame_edges": 0.02,
+      "process_time_ms": 69.3
+    },
+    {
+      "frame": 82,
+      "timestamp": "2026-09-05T20:01:44.167489",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.728,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.568,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.807
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.391,
+      "image_name_top3": [
+        [
+          "person",
+          0.391
+        ],
+        [
+          "electronics",
+          0.095
+        ],
+        [
+          "vehicle",
+          0.064
+        ]
+      ],
+      "frame_brightness": 0.54,
+      "frame_contrast": 0.391,
+      "frame_edges": 0.021,
+      "process_time_ms": 54.2
+    },
+    {
+      "frame": 83,
+      "timestamp": "2026-09-05T20:01:44.256158",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.444,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.393,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.756
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.391,
+      "image_name_top3": [
+        [
+          "person",
+          0.391
+        ],
+        [
+          "electronics",
+          0.094
+        ],
+        [
+          "vehicle",
+          0.064
+        ]
+      ],
+      "frame_brightness": 0.541,
+      "frame_contrast": 0.39,
+      "frame_edges": 0.02,
+      "process_time_ms": 54.9
+    },
+    {
+      "frame": 84,
+      "timestamp": "2026-09-05T20:01:44.338501",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.502,
+      "abstained": true,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.58,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.714
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.39,
+      "image_name_top3": [
+        [
+          "person",
+          0.39
+        ],
+        [
+          "electronics",
+          0.094
+        ],
+        [
+          "vehicle",
+          0.064
+        ]
+      ],
+      "frame_brightness": 0.542,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.019,
+      "process_time_ms": 48.4
+    },
+    {
+      "frame": 85,
+      "timestamp": "2026-09-05T20:01:44.422568",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.565,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.394,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.778
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.392,
+      "image_name_top3": [
+        [
+          "person",
+          0.392
+        ],
+        [
+          "electronics",
+          0.094
+        ],
+        [
+          "vehicle",
+          0.064
+        ]
+      ],
+      "frame_brightness": 0.542,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.02,
+      "process_time_ms": 50.2
+    },
+    {
+      "frame": 86,
+      "timestamp": "2026-09-05T20:01:44.506674",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.404,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.414,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.748
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.392,
+      "image_name_top3": [
+        [
+          "person",
+          0.392
+        ],
+        [
+          "electronics",
+          0.093
+        ],
+        [
+          "vehicle",
+          0.064
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.02,
+      "process_time_ms": 48.5
+    },
+    {
+      "frame": 87,
+      "timestamp": "2026-09-05T20:01:44.592246",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.599,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.393,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.768
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.394,
+      "image_name_top3": [
+        [
+          "person",
+          0.394
+        ],
+        [
+          "electronics",
+          0.093
+        ],
+        [
+          "vehicle",
+          0.064
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.019,
+      "process_time_ms": 50.3
+    },
+    {
+      "frame": 88,
+      "timestamp": "2026-09-05T20:01:44.672181",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.745,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.569,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.711
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.398,
+      "image_name_top3": [
+        [
+          "person",
+          0.398
+        ],
+        [
+          "electronics",
+          0.092
+        ],
+        [
+          "vehicle",
+          0.064
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.02,
+      "process_time_ms": 48.8
+    },
+    {
+      "frame": 89,
+      "timestamp": "2026-09-05T20:01:44.759716",
+      "resolution_chosen": 320,
+      "action": "fallback",
+      "acies_cost": 396.8,
+      "acies_steps": 2,
+      "acies_confidence": 0.731,
+      "abstained": false,
+      "degraded": true,
+      "budget_exceeded": false,
+      "avg_clarity": 0.568,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.795
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.401,
+      "image_name_top3": [
+        [
+          "person",
+          0.401
+        ],
+        [
+          "electronics",
+          0.092
+        ],
+        [
+          "vehicle",
+          0.063
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.02,
+      "process_time_ms": 54.0
+    },
+    {
+      "frame": 90,
+      "timestamp": "2026-09-05T20:01:44.846074",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.574,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.397,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.743
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.403,
+      "image_name_top3": [
+        [
+          "person",
+          0.403
+        ],
+        [
+          "electronics",
+          0.091
+        ],
+        [
+          "vehicle",
+          0.063
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.02,
+      "process_time_ms": 52.1
+    },
+    {
+      "frame": 91,
+      "timestamp": "2026-09-05T20:01:44.934560",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.613,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.401,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.761
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.405,
+      "image_name_top3": [
+        [
+          "person",
+          0.405
+        ],
+        [
+          "electronics",
+          0.091
+        ],
+        [
+          "vehicle",
+          0.063
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.02,
+      "process_time_ms": 56.6
+    },
+    {
+      "frame": 92,
+      "timestamp": "2026-09-05T20:01:45.017100",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.553,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.396,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.798
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.407,
+      "image_name_top3": [
+        [
+          "person",
+          0.407
+        ],
+        [
+          "electronics",
+          0.09
+        ],
+        [
+          "vehicle",
+          0.063
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.02,
+      "process_time_ms": 49.8
+    },
+    {
+      "frame": 93,
+      "timestamp": "2026-09-05T20:01:45.101207",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.561,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.418,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.731
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.408,
+      "image_name_top3": [
+        [
+          "person",
+          0.408
+        ],
+        [
+          "electronics",
+          0.09
+        ],
+        [
+          "vehicle",
+          0.063
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.02,
+      "process_time_ms": 51.6
+    },
+    {
+      "frame": 94,
+      "timestamp": "2026-09-05T20:01:45.184508",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.591,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.409,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.786
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.41,
+      "image_name_top3": [
+        [
+          "person",
+          0.41
+        ],
+        [
+          "electronics",
+          0.089
+        ],
+        [
+          "vehicle",
+          0.063
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.02,
+      "process_time_ms": 50.4
+    },
+    {
+      "frame": 95,
+      "timestamp": "2026-09-05T20:01:45.275366",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.406,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.405,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.784
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.41,
+      "image_name_top3": [
+        [
+          "person",
+          0.41
+        ],
+        [
+          "electronics",
+          0.089
+        ],
+        [
+          "vehicle",
+          0.063
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.02,
+      "process_time_ms": 58.0
+    },
+    {
+      "frame": 96,
+      "timestamp": "2026-09-05T20:01:45.423519",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.201,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.387,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.739
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.408,
+      "image_name_top3": [
+        [
+          "person",
+          0.408
+        ],
+        [
+          "electronics",
+          0.089
+        ],
+        [
+          "vehicle",
+          0.063
+        ]
+      ],
+      "frame_brightness": 0.543,
+      "frame_contrast": 0.389,
+      "frame_edges": 0.02,
+      "process_time_ms": 112.4
+    },
+    {
+      "frame": 97,
+      "timestamp": "2026-09-05T20:01:45.507551",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.584,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.416,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.721
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.409,
+      "image_name_top3": [
+        [
+          "person",
+          0.409
+        ],
+        [
+          "electronics",
+          0.089
+        ],
+        [
+          "vehicle",
+          0.063
+        ]
+      ],
+      "frame_brightness": 0.545,
+      "frame_contrast": 0.387,
+      "frame_edges": 0.02,
+      "process_time_ms": 49.9
+    },
+    {
+      "frame": 98,
+      "timestamp": "2026-09-05T20:01:45.685654",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.579,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.421,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.828
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.411,
+      "image_name_top3": [
+        [
+          "person",
+          0.411
+        ],
+        [
+          "electronics",
+          0.088
+        ],
+        [
+          "vehicle",
+          0.063
+        ]
+      ],
+      "frame_brightness": 0.546,
+      "frame_contrast": 0.386,
+      "frame_edges": 0.019,
+      "process_time_ms": 144.1
+    },
+    {
+      "frame": 99,
+      "timestamp": "2026-09-05T20:01:45.778617",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.664,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.39,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.825
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.413,
+      "image_name_top3": [
+        [
+          "person",
+          0.413
+        ],
+        [
+          "electronics",
+          0.088
+        ],
+        [
+          "vehicle",
+          0.062
+        ]
+      ],
+      "frame_brightness": 0.548,
+      "frame_contrast": 0.384,
+      "frame_edges": 0.019,
+      "process_time_ms": 58.7
+    },
+    {
+      "frame": 100,
+      "timestamp": "2026-09-05T20:01:45.862018",
+      "resolution_chosen": 1024,
+      "action": "1024p",
+      "acies_cost": 595.2,
+      "acies_steps": 3,
+      "acies_confidence": 0.401,
+      "abstained": false,
+      "degraded": false,
+      "budget_exceeded": true,
+      "avg_clarity": 0.394,
+      "n_detections": 1,
+      "detection_classes": [
+        "person"
+      ],
+      "detection_confs": [
+        0.741
+      ],
+      "image_name": "person",
+      "image_name_confidence": 0.413,
+      "image_name_top3": [
+        [
+          "person",
+          0.413
+        ],
+        [
+          "electronics",
+          0.088
+        ],
+        [
+          "vehicle",
+          0.062
+        ]
+      ],
+      "frame_brightness": 0.549,
+      "frame_contrast": 0.383,
+      "frame_edges": 0.019,
+      "process_time_ms": 48.7
+    }
+  ],
+  "resolution_distribution": {
+    "320": 48,
+    "1024": 52
+  },
+  "detection_stats": {
+    "person": 115,
+    "cell phone": 5,
+    "train": 1,
+    "remote": 26
+  }
+}
