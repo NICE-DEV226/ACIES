@@ -8,7 +8,6 @@ Quand confidence ∈ [zone_start, threshold]:
   - On est dans la "conviction zone"
   - Les actions à haute clarté reçoivent un bonus
   - Les actions "cheap mais uninformative" sont pénalisées
-  - Si on oscille trop longtemps, on force un commit
 """
 
 from dataclasses import dataclass, field
@@ -22,8 +21,8 @@ class ConvictionConfig:
     zone_start: float = 0.90      # Fraction du threshold pour entrer dans la zone
     bonus_high_clarity: float = 1.3   # Bonus pour actions clarifiées dans la zone
     penalty_low_clarity: float = 0.5  # Pénalité pour actions peu claires dans la zone
-    oscillation_threshold: int = 4    # Steps max dans la zone avant force-commit
-    force_commit_clarity: float = 0.8 # Clarté minimum pour le force-commit
+    oscillation_threshold: int = 4    # Steps max dans la zone avant alerte
+    clarity_threshold: float = 0.8    # Clarté min pour considérer une action "clarifiée"
 
 
 @dataclass
@@ -120,7 +119,7 @@ class Conviction:
         for action, score, clarity in scores:
             clarity_est = clarity_estimates.get(action.id, clarity)
 
-            if clarity_est >= self.config.force_commit_clarity:
+            if clarity_est >= self.config.clarity_threshold:
                 # Action clarifiée → bonus dans la zone
                 bonus = self.config.bonus_high_clarity
                 # Plus on est longtemps dans la zone, plus le bonus augmente
@@ -135,41 +134,6 @@ class Conviction:
 
         adjusted.sort(key=lambda x: x[1], reverse=True)
         return adjusted
-
-    def should_force_commit(self) -> bool:
-        """
-        Faut-il forcer un commit (arrêt avec décision actuelle) ?
-        Oui si on a trop oscillé dans la zone.
-        """
-        if not self.state.in_zone:
-            return False
-
-        # Force commit si on est dans la zone depuis trop longtemps
-        if self.state.zone_steps >= self.config.oscillation_threshold:
-            return True
-
-        # Force commit si oscillations trop fréquentes
-        if self.state.oscillation_count >= 2:
-            return True
-
-        return False
-
-    def force_commit_action(
-        self,
-        candidates: list,
-        clarity_estimates: dict,
-    ) -> Optional[Action]:
-        """
-        Sélectionne l'action pour le force-commit.
-        Choisit l'action la plus clarifiée parmi les candidates.
-        """
-        if not candidates:
-            return None
-
-        # Trier par clarté estimée décroissante
-        best = max(candidates, key=lambda x: clarity_estimates.get(
-            x[0].id, x[2] if len(x) > 2 else 0.5))
-        return best[0]
 
     def summary(self) -> dict:
         return {

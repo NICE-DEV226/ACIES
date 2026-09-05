@@ -298,10 +298,7 @@ class APCController:
             clarity_sampled = self.learner.sample(safe_action.id)
             cost = safe_action.cost(self.config.hardware)
 
-            # 5. Générer l'observation
-            obs = 1 if (true_class == 1 and random.random() < clarity_true) else \
-                  (0 if true_class == 0 and random.random() < clarity_true else \
-                   (1 if true_class == 1 else 0))
+            # 5. Générer l'observation (bruitée par la clarté)
             if true_class == 1:
                 obs = 1 if random.random() < clarity_true else 0
             else:
