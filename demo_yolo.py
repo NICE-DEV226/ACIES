@@ -214,6 +214,17 @@ class ACIESYOLO:
 
     def save_report(self):
         """Save full report to JSON."""
+        def make_serializable(obj):
+            if isinstance(obj, dict):
+                return {k: make_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, (list, tuple)):
+                return [make_serializable(v) for v in obj]
+            elif hasattr(obj, 'item'):
+                return obj.item()
+            elif hasattr(obj, '__bool__') and not isinstance(obj, bool):
+                return bool(obj)
+            return obj
+
         report = {
             "session": {
                 "timestamp": datetime.now().isoformat(),
@@ -224,8 +235,8 @@ class ACIESYOLO:
                     "degradation_patience": self.config.degradation_patience,
                 },
             },
-            "summary": self.apc.summary(),
-            "frames": self.frame_log,
+            "summary": make_serializable(self.apc.summary()),
+            "frames": make_serializable(self.frame_log),
             "resolution_distribution": {},
             "detection_stats": {},
         }
