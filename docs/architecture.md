@@ -57,6 +57,70 @@ Each perception step follows this cycle:
 9. DECIDE    → If confidence ≥ threshold, output decision; otherwise loop
 ```
 
+## Safety Layer — Decision Diagram
+
+The safety layer applies 5 rules in order at each step:
+
+```
+                    ┌─────────────────┐
+                    │  Candidate       │
+                    │  actions scored  │
+                    │  by ΔR/C         │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+              ┌─YES─┤ R1: Emergency?  ├─NO─┐
+              │     │ risk >= 4.0?    │     │
+              │     └─────────────────┘     │
+              ▼                             ▼
+     ┌────────────────┐           ┌─────────────────┐
+     │ Force most      │    ┌─YES─┤ R2: Min obs?    ├─NO─┐
+     │ informative     │    │     │ n_obs < 1?      │     │
+     │ action          │    │     └─────────────────┘     │
+     └────────────────┘    ▼                             ▼
+                   ┌────────────────┐           ┌─────────────────┐
+                   │ Force best     │    ┌─YES─┤ R3: Confident?  ├─NO─┐
+                   │ action         │    │     │ conf >= 0.95?   │     │
+                   └────────────────┘    │     └─────────────────┘     │
+                                         ▼                             ▼
+                                  ┌────────────┐             ┌─────────────────┐
+                                  │ STOP       │      ┌─YES─┤ R4: Safe?       ├─NO─┐
+                                  │ (decision) │      │     │ risk <= 2.0     │     │
+                                  └────────────┘      │     │ clarity >= 0.5  │     │
+                                                      │     └─────────────────┘     │
+                                                      ▼                             ▼
+                                               ┌────────────┐             ┌─────────────────┐
+                                               │ Add to     │      ┌─YES─┤ R5: Any safe?   ├─NO─┐
+                                               │ safe list  │      │     │                 │     │
+                                               └────────────┘      │     └─────────────────┘     │
+                                                                   ▼                             ▼
+                                                            ┌────────────┐             ┌─────────────────┐
+                                                            │ Pick best  │             │ Emergency:      │
+                                                            │ ΔR/C       │             │ force best      │
+                                                            └────────────┘             └─────────────────┘
+```
+
+**Rule summary:**
+
+| # | Rule | Condition | Action |
+|:-:|------|-----------|--------|
+| 1 | Emergency | risk >= 4.0 | Force most informative action |
+| 2 | Min obs | n_obs < 1 | Force best action |
+| 3 | Confident | confidence >= 0.95 | STOP |
+| 4 | Filter | risk > 2.0 or clarity < 0.5 | Reject action |
+| 5 | Select | best ΔR/C among safe | Execute |
+
+## BOCPD (Change-Point Detection)
+
+**Status**: Disabled by default. Enable for streaming/continuous tasks.
+
+BOCPD (Bayesian Online Change-Point Detection) monitors clarity distributions and resets Thompson posteriors when a shift is detected. Useful for:
+- Video streams (lighting changes)
+- Sensor degradation over time
+- Distribution drift in production
+
+Not needed for independent images (each image is a separate task).
+
 ## Belief Tracking
 
 The `BeliefState` maintains P(Y=1 | observations) using exact Bayesian updating:

@@ -57,7 +57,7 @@ class APCConfig:
     conviction_oscillation_threshold: int = 3
 
     # Change-point detection
-    change_point_enabled: bool = True
+    change_point_enabled: bool = False  # Disable for independent images; enable for streaming
     change_point_threshold: float = 0.5
     change_point_hazard: float = 1/200
 

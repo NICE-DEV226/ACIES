@@ -1,13 +1,17 @@
 """
 ACIES — Safety Layer
 
-Garantit que le contrôleur ne descend jamais sous un seuil de risque.
-Fonctionne comme un filtre entre le score ΔR/C et l'action exécutée.
+5 decision rules, applied in order:
 
-Mécanismes :
-1. Risk floor : refuse toute action dont le risque attendu > seuil
-2. Emergency override : si le risque courant > seuil, force l'action la plus informative
-3. Calibration conformale : ajuste le seuil pour garantir un taux d'erreur contrôlé
+  1. EMERGENCY  — risk >= emergency_risk? → force most informative action
+  2. MIN_OBS    — not enough observations? → force best action
+  3. CONFIDENT  — confidence >= threshold? → STOP (return None)
+  4. FILTER     — remove actions with risk > max_risk or clarity < min
+  5. SELECT     — pick best ΔR/C among safe candidates
+
+Post-action:
+  - check_post_action(): violation if risk > 4.5
+  - should_abstain(): True if confidence < threshold or not enough obs
 """
 
 from dataclasses import dataclass, field
