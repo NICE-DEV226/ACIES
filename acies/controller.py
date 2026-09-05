@@ -310,6 +310,12 @@ class APCController:
                 # STOP (safety layer decided)
                 break
 
+            # 3.5. Check budget BEFORE executing action
+            action_cost = safe_action.cost(self.config.hardware)
+            if total_cost + action_cost > self.config.max_cost_per_image:
+                cost_budget_exceeded = True
+                break
+
             # 3. Vérifier l'urgence
             if self.safety.state.n_emergency > n_emergency:
                 n_emergency = self.safety.state.n_emergency
