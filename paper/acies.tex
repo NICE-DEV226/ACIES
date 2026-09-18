@@ -6,14 +6,10 @@
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{cleveref}
-\usepackage{algorithm}
-\usepackage{algorithmic}
 \usepackage{xcolor}
 
-\definecolor{turquoise}{RGB}{0,212,170}
-
 \title{\textbf{ACIES: Adaptive Perception Control \\
-for Cost-Efficient Visual Decision-Making}}
+as Sequential Decision-Making over Perception Channels}}
 
 \author{
   NICE-DEV226 \\
@@ -27,238 +23,239 @@ for Cost-Efficient Visual Decision-Making}}
 \maketitle
 
 \begin{abstract}
-Visual perception in deployed systems is typically executed at fixed resolution, wasting computational resources on inputs where low-resolution processing would suffice for accurate decisions. We present \textbf{ACIES} (Adaptive Perception Control), a decision-theoretic framework that treats perception as a resource allocation problem. At each step, ACIES selects the perception action (resolution, crop, layer activation) that maximizes \emph{risk reduction per unit cost} ($\Delta R / C$), guided by Thompson Sampling for online clarity estimation, Bayesian belief tracking, and a novel anti-oscillation conviction mechanism. We validate ACIES on MNIST binary classification (10,000 test images), demonstrating \textbf{76\% computational cost reduction} with only 8\% accuracy loss compared to fixed full-resolution processing. Our open-source implementation includes Python, Go (32,800 runs/sec), and C++ backends with safety guarantees for deployment on edge hardware.
+Deployed vision systems usually run their model at one fixed resolution, although many inputs
+could be decided at a fraction of the cost. We treat the choice of how much perception to spend on
+an input as a sequential decision problem. Each perception action (a resolution) is modelled as a
+\emph{channel}: the quantised output of the model has a class-conditional distribution learned from
+labelled examples. A controller keeps a belief about the decision and, by dynamic programming over
+that belief, runs the next action only when its expected error reduction, priced by a single
+parameter, exceeds its computational cost. We evaluate on real detections of YOLOv8n on COCO
+val2017 with measured latency and an honest protocol (all settings chosen on a calibration split,
+paired-bootstrap intervals on a held-out split). On the decision ``is there an object of class $c$
+in the image?'' the controller uses 40\% less compute than fixed 640\,px inference for 0.2
+accuracy points less on average over eight classes. Our first formulation, which described each
+action by one independent ``clarity'' number, was \emph{worse than fixed-resolution inference on
+every class}; we explain why. We also report two negative results: a simple two-stage confidence
+cascade matches the cost/accuracy frontier, and no per-image resolution selector we tried improves
+detection mAP over fixed-resolution YOLOv8n.
 \end{abstract}
 
 % ============================================================
 \section{Introduction}
 \label{sec:intro}
 
-Modern vision systems---from autonomous vehicles to mobile augmented reality---process every input at maximum resolution, regardless of difficulty. A clear road scene and a complex intersection receive identical computational treatment. This fixed-resolution paradigm is fundamentally inefficient: \emph{not all inputs require the same perceptual effort to reach a decision}.
+A clear scene and a cluttered one receive the same computation in a fixed-resolution pipeline.
+Whether an input needs more perception is a question about \emph{that input}, and answering it
+costs compute too. We ask when a controller can profit from deciding it online.
 
-We formalize this as a \textbf{cost-risk optimization problem}. Given a target decision confidence $\tau$, a set of perception actions $\mathcal{A}$ with associated costs $C(a)$ and information gains $\Delta R(a)$, the optimal strategy selects actions that maximize $\Delta R / C$---risk reduction per unit computational cost---until the confidence threshold is reached or a safety constraint is violated.
-
-\textbf{Contributions:}
+\textbf{Contributions.}
 \begin{itemize}
-  \item A formal framework for adaptive perception control via $\Delta R / C$ optimization (\Cref{sec:method})
-  \item A Thompson Sampling mechanism with conviction-based anti-oscillation for stable action selection (\Cref{sec:conviction})
-  \item Bayesian change-point detection to handle distribution shifts during deployment (\Cref{sec:changepoint})
-  \item Empirical validation on MNIST showing 76\% cost savings with bounded accuracy loss (\Cref{sec:experiments})
-  \item Open-source implementation in Python, Go, and C++ with safety guarantees (\Cref{sec:implementation})
+  \item A formulation in which each perception action is a learned channel
+  $P(\text{outcome}\mid Y,a)$ over a quantised model output, replacing a scalar ``clarity'', and a
+  planner that trades expected error against measured cost (\Cref{sec:method}).
+  \item A diagnosis, with measurements, of why the scalar-clarity formulation fails on real
+  perception: repeated deterministic observations counted as independent, hard $0/1$ votes, and a
+  safety override that fired on the uninformed prior (\Cref{sec:failure}).
+  \item A reproducible real-model evaluation with a calibration/test protocol and confidence
+  intervals, including negative results (\Cref{sec:experiments}).
 \end{itemize}
 
 % ============================================================
 \section{Related Work}
 \label{sec:related}
 
-\textbf{Adaptive computation.} Early exiting \cite{teerapakayan2021early} and dynamic neural networks \cite{han2021deep} adapt network depth per input. ACIES differs by optimizing over a \emph{heterogeneous} action space (resolution, crops, layers) rather than a single exit depth.
+\textbf{Adaptive computation.} Early exiting \cite{teerapakayan2021early} and dynamic networks
+\cite{han2021deep} adapt computation inside a model. We instead control \emph{which input
+transformation} (resolution) a black-box model receives, so the approach applies to a model we
+cannot modify.
 
-\textbf{Cost-aware inference.} Cost-sensitive learning \cite{zadrozny2003cost} optimizes classifier cost at training time. ACIES operates at \emph{inference time}, selecting perception actions online without retraining.
+\textbf{Cost-aware inference.} Cost-sensitive learning \cite{zadrozny2003cost} fixes costs at
+training time; we choose actions at inference time from measured costs.
 
-\textbf{Thompson Sampling.} Originally proposed for multi-armed bandits \cite{thompson1933likelihood}, Thompson Sampling has been applied to adaptive experimentation \cite{russo2018tutorial}. We adapt it with a conservative Beta(2,2) prior and a conviction mechanism to prevent oscillation near decision boundaries.
+\textbf{Bandits and calibration.} Thompson sampling \cite{thompson1933likelihood,russo2018tutorial}
+learns action quality online; we learn channels offline with Dirichlet posteriors and fit a
+single evidence-discount parameter on held-out data, in the spirit of calibration
+\cite{guo2017calibration}.
 
-\textbf{Bayesian change-point detection.} BOCPD \cite{adams2007bayesian} detects distribution shifts in streaming data. We integrate it with the perception controller to reset belief states when the input distribution shifts, preventing stale posteriors from degrading decisions.
+\textbf{Change-point detection.} Bayesian online change-point detection \cite{adams2007bayesian}
+was part of an earlier version of the controller. With a constant hazard rate $h$ the posterior
+mass of a change point at each step equals $h$ identically, so thresholding it cannot fire; we
+found this by experiment and do not use change-point detection in the evaluated controller.
 
 % ============================================================
 \section{Method}
 \label{sec:method}
 
-\subsection{Problem Formulation}
+\subsection{Setting}
+Let $Y\in\{0,1\}$ be the decision variable with prior $\pi=P(Y{=}1)$. There are $n$ actions
+$a_1,\dots,a_n$ ordered by increasing cost $C(a_i)$ (measured latency). Running $a$ on the input
+yields a model output that is quantised into one of $M$ outcomes $o\in\{0,\dots,M{-}1\}$. Perception
+is deterministic: running the same action again returns the same outcome.
 
-Let $\mathcal{A} = \{a_1, \ldots, a_K\}$ be a set of perception actions, each with cost $C(a_k) \in \mathbb{R}^+$ and resulting observation $o_k$. Let $Y \in \{0, 1\}$ be the true class and $\hat{Y}$ the predicted class. We define:
-
-\begin{itemize}
-  \item \textbf{Belief:} $P(Y=1 \mid o_{1:t})$ maintained via Bayesian filtering
-  \item \textbf{Risk:} $R_t = 1 - \max_{y} P(Y=y \mid o_{1:t})$
-  \item \textbf{Risk reduction:} $\Delta R(a_k) = R_t - R_{t+1}(a_k)$
-  \item \textbf{Action score:} $S(a_k) = \frac{\Delta R(a_k)}{C(a_k)} + \text{conviction}(a_k)$
-\end{itemize}
-
-The controller selects $a^* = \arg\max_{a_k \in \mathcal{A}} S(a_k)$ at each step $t$.
-
-\subsection{Belief Tracking}
-\label{sec:belief}
-
-We maintain a Bayesian filter over the class posterior:
-
+\subsection{Channels}
+Each action is described by two categorical distributions $P(o\mid Y{=}y,a)$, estimated from
+labelled examples with a symmetric Dirichlet prior:
 \begin{equation}
-  P(Y=1 \mid o_{1:t}) = \frac{P(o_t \mid Y=1) \cdot P(Y=1 \mid o_{1:t-1})}{P(o_t)}
+  \hat P(o\mid y,a)=\frac{n_{a,y,o}+\alpha}{\sum_{o'}n_{a,y,o'}+M\alpha}.
 \end{equation}
+The class prior $\pi$ is estimated from the same data. For $M=2$ and a symmetric table this is the
+binary-symmetric channel of the original formulation.
 
-The observation model $P(o_t \mid Y=y)$ is estimated from the clarity of the current perception action. Temperature calibration \cite{guo2017calibration} maps raw clarity scores to calibrated probabilities:
-
+\subsection{Belief with correlated actions}
+With belief $b=P(Y{=}1\mid\text{history})$ and $\ell_a(o)=\log\frac{P(o\mid 1,a)}{P(o\mid 0,a)}$,
 \begin{equation}
-  P(o_t \mid Y=y) = \sigma\left(\frac{\text{clarity}(a_t) - \mu_y}{T}\right)
+  \operatorname{logit} b' = \kappa\,\operatorname{logit} b + (1-\kappa)\operatorname{logit}\pi + \ell_a(o),
+  \label{eq:update}
 \end{equation}
+where $\kappa\in[0,1]$ is the share of previous evidence that is kept. $\kappa{=}1$ is the exact
+Bayes update for actions whose outputs are conditionally independent given $Y$; $\kappa{=}0$ lets
+the latest outcome replace earlier ones. Errors of different resolutions on the same image are
+correlated, so $\kappa{=}1$ counts the same difficulty twice. We fit $\kappa$ by held-out
+log-loss on the calibration data.
 
-where $T$ is a temperature parameter and $\mu_y$ is the class-conditional mean clarity.
-
-\subsection{Clarity Learning via Thompson Sampling}
-\label{sec:thompson}
-
-Each action $a_k$ has unknown clarity $p_k = P(\text{correct} \mid a_k)$. We model this with a Beta distribution:
-
+\subsection{Planning}
+Let $\lambda$ be the price of one error in cost units. Since re-running an action adds no
+information and a cheaper action after a dearer one rarely does, plans move upward through the
+ordered actions, and the state is $(b,j)$ where $j$ is the lowest action still allowed:
 \begin{equation}
-  p_k \sim \text{Beta}(\alpha_k, \beta_k)
+  V_t(b,j)=\min\Big\{\lambda\min(b,1{-}b),\ \min_{a_i,\,i\ge j}\Big[C(a_i)+\sum_{o}P(o\mid b,a_i)\,V_{t+1}(b'_{o},\,i{+}1)\Big]\Big\},
+  \label{eq:bellman}
 \end{equation}
+with $V_H(b,j)=\lambda\min(b,1{-}b)$ for horizon $H$. We solve \Cref{eq:bellman} on a belief grid
+with linear interpolation. The controller stops when stopping attains the minimum and decides
+$\hat Y=\mathbf 1[b\ge\tfrac12]$. $\lambda$ is the single knob that trades accuracy for compute.
+A greedy alternative (run the action maximising expected error reduction per unit cost while it
+exceeds its price) is available; on a synthetic environment with a cheap uninformative first action
+the plan attains 25\% lower expected objective (cost plus $\lambda\times$error) than the greedy rule.
 
-with conservative prior $\alpha_k = \beta_k = 2$ (uniform-like, penalizing overconfidence). After observing correctness $x \in \{0, 1\}$:
+\subsection{Exact optimum for the binary model}
+For the binary-symmetric model with independent observations, the same recursion with $M=2$
+and repeated actions allowed gives the exact optimal stopping policy; we use it as a lower bound
+on cost against which any controller in that model can be measured (\texttt{acies.optimal}).
 
-\begin{equation}
-  \alpha_k \leftarrow \alpha_k + x, \quad \beta_k \leftarrow \beta_k + (1 - x)
-\end{equation}
+% ============================================================
+\section{Why the scalar-clarity formulation fails}
+\label{sec:failure}
 
-At each step, we sample $\tilde{p}_k \sim \text{Beta}(\alpha_k, \beta_k)$ and use it to estimate $\Delta R(a_k)$.
+The first version scored each action by $\Delta R/C$ with a single number $p_a=P(\text{correct}\mid a)$,
+learned by Thompson sampling, and updated the belief as if every observation were an independent draw
+of a symmetric channel. Three defects were measured.
 
-\subsection{Conviction: Anti-Oscillation Mechanism}
-\label{sec:conviction}
+\textbf{Emergency override on the prior.} The risk was scaled to $10\min(b,1{-}b)$, so the untouched
+prior has risk $5.0$ above the emergency threshold $4.0$. The override, which forces the most
+informative action irrespective of cost, therefore fired on every task and selected the most expensive
+resolution: on 3000 simulated tasks the first action was the highest resolution 3000 times, and the
+whole scoring machinery was bypassed. Restricting the override to states after at least one observation
+halved both cost and error at confidence threshold 0.92 on the same simulator (cost 187 to 96, error 7.1\% to 3.3\%),
+and cut cost by 39\% at equal error at threshold 0.99.
 
-Near the decision threshold $\tau$, Thompson Sampling can oscillate between actions with similar scores. We introduce a \emph{conviction zone} $\mathcal{Z} = [0.90, \tau]$ and a conviction score:
+\textbf{Independent observations.} With deterministic perception, repeating an action returns the same
+answer. The controller counted it as new evidence and paid again. On real YOLO detections this
+appeared as the cheapest action being selected repeatedly.
 
-\begin{equation}
-  \text{conv}(a_k) = \begin{cases}
-    \beta \cdot \tilde{p}_k & \text{if } P(Y=1 \mid o_{1:t}) \in \mathcal{Z} \\
-    0 & \text{otherwise}
-  \end{cases}
-\end{equation}
+\textbf{Hard votes.} A binary vote discards the detector's confidence, whereas the middle of the
+confidence range is precisely where a second, costlier look pays off.
 
-where $\beta > 0$ is a boosting coefficient. This preferentially selects high-clarity actions when the system is near a decision boundary, reducing oscillation by $\sim 40\%$ in our experiments.
-
-\subsection{Safety Layer}
-\label{sec:safety}
-
-We enforce hard constraints on the belief state:
-
-\begin{equation}
-  \text{reject}(a_k) = \begin{cases}
-    \text{true} & \text{if } R_{t+1}(a_k) > R_{\max} \\
-    \text{true} & \text{if } R_t > R_{\text{emergency}} \\
-    \text{false} & \text{otherwise}
-  \end{cases}
-\end{equation}
-
-with $R_{\max} = 2.0$ (maximum允许 risk) and $R_{\text{emergency}} = 4.0$ (emergency override). A violation counter tracks consecutive safety breaches; after 4.5 consecutive violations, the system forces maximum-resolution processing.
-
-\subsection{Bayesian Change-Point Detection}
-\label{sec:changepoint}
-
-We employ BOCPD \cite{adams2007bayesian} to detect distribution shifts. Given a run-length $r_t$ (time since last change point):
-
-\begin{equation}
-  P(r_t = 0 \mid o_{1:t}) \propto \sum_{r_{t-1}} P(r_t = 0 \mid r_{t-1}) P(o_t \mid r_{t-1}, o_{1:t-1})
-\end{equation}
-
-When $P(r_t = 0) > \theta_{\text{cp}}$ (threshold $= 0.15$), we reset all Thompson posteriors to the prior, preventing stale statistics from corrupting decisions under the new distribution.
+\textbf{Distance to the optimum.} On a simulated clarity table, the exact optimum of
+\Cref{sec:method} costs 37 at 1.6\% error where the original controller cost about 240 (5--6$\times$ or
+more); after the corrections above the gap is 3--4$\times$.
 
 % ============================================================
 \section{Experiments}
 \label{sec:experiments}
 
 \subsection{Setup}
+\textbf{Data.} 3000 images sampled with a fixed seed from COCO val2017 (disjoint from the
+train2017 images on which the Ultralytics weights are trained). \textbf{Model.} YOLOv8n, run at
+$\{160,224,320,416,512,640,800,1024\}$\,px with confidence floor $0.001$ and NMS IoU $0.7$ (the
+Ultralytics validation protocol); every detection and every latency is stored, so all policies are
+evaluated on real outputs, none simulated. \textbf{Cost.} Latency on an 8-core CPU (4 threads),
+per-resolution mean from a run on an idle machine ($22$--$183$\,ms). \textbf{Task.} For each of
+eight classes, the binary decision ``is there an object of this class in the image?''; the outcome
+is the top confidence of the class, quantised into nine bins. \textbf{Protocol.} Images are split
+by index parity: even indices are calibration, odd indices are test (1500 images). Every setting is
+chosen on calibration only, with one rule shared by all methods: the cheapest setting whose
+cross-fitted calibration accuracy is within 0.3 points of fixed 640\,px. The chosen setting is then
+frozen and measured once on the test split. Differences are given with paired-bootstrap 95\%
+intervals over test images.
 
-\textbf{Dataset:} MNIST \cite{lecun1998gradient}, 10,000 test images. Binary classification: digit 0 vs. non-0.
-
-\textbf{Action space:} 9 perception actions---$\{64\text{p}, 128\text{p}, 224\text{p}, 320\text{p}, 512\text{p}, 1024\text{p}\}$ (resolution resize) and $\{\text{crop}_{224}, \text{crop}_{320}, \text{crop}_{512}\}$ (center crop).
-
-\textbf{Hardware profiles:} 5 configurations (Default, Jetson Orin, Raspberry Pi 5, Desktop GPU, Edge TPU) with profile-specific cost multipliers.
-
-\textbf{Parameters:} $\tau = 0.92$ (confidence threshold), $\beta = 0.15$ (conviction boost), $\theta_{\text{cp}} = 0.15$ (change-point threshold).
-
-\subsection{Baselines}
-
-\begin{itemize}
-  \item \textbf{Fixed 1024p:} Process every image at full resolution
-  \item \textbf{Fixed 224p:} Process every image at 224$\times$224
-  \item \textbf{Random:} Randomly select perception actions
-  \item \textbf{Oracle:} Optimal action selection with true clarity values (upper bound)
-\end{itemize}
+\textbf{Baselines.} Fixed resolution; a two-stage confidence cascade (run a cheap resolution, accept
+if the confidence is above/below two thresholds, otherwise run a second resolution; resolutions and
+thresholds selected on calibration by the same rule); and the original scalar-clarity controller.
 
 \subsection{Results}
-
-\Cref{tab:main} presents the main results on MNIST.
+\Cref{tab:main} gives the test results. The original controller reached 89.2\%, 92.1\%, 92.4\%
+and 93.9\% on \emph{person}, \emph{car}, \emph{chair} and \emph{bottle} at 67--78\,ms, below fixed
+inference at lower cost on each. The channel controller (ACIES v2) saves 40\% of the compute of
+fixed 640\,px on average for 0.2 accuracy points. Its loss is statistically significant on
+\emph{person} ($-1.33$ points, 95\% CI $[-2.33,-0.40]$), borderline on \emph{cup}, and within the
+noise on the other classes. The two-stage cascade attains a comparable or better frontier
+(mean 95.6\% at 36\,ms).
 
 \begin{table}[h]
 \centering
-\caption{MNIST binary classification (10,000 test images). Cost is cumulative across all processed images.}
+\caption{Test split (1500 images per class). Accuracy and mean latency; $\Delta$ is the accuracy
+difference of ACIES v2 from fixed 640\,px with a paired-bootstrap 95\% interval.}
 \label{tab:main}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Method} & \textbf{Accuracy} & \textbf{Cost} & \textbf{Savings} \\
+\textbf{Class} & \textbf{Fixed 640} & \textbf{ACIES v2} & $\Delta$ \textbf{[95\% CI]} & \textbf{Cascade} \\
 \midrule
-Fixed 1024p & 98.8\% & 385.8 & --- \\
-Random & 95.5\% & 149.6 & 61\% \\
-Fixed 224p & 82.1\% & 76.5 & 80\% \\
-\textbf{ACIES (ours)} & \textbf{90.8\%} & \textbf{93.6} & \textbf{76\%} \\
-Oracle & 99.1\% & 68.2 & 82\% \\
+person & 94.7\% / 84\,ms & 93.4\% / 51\,ms & $-1.33$ [$-2.33$, $-0.40$] & 93.9\% / 45\,ms \\
+car    & 96.7\% / 84\,ms & 96.5\% / 63\,ms & $-0.20$ [$-0.93$, $+0.47$] & 95.6\% / 44\,ms \\
+chair  & 94.3\% / 84\,ms & 94.4\% / 46\,ms & $+0.14$ [$-0.73$, $+1.07$] & 93.7\% / 36\,ms \\
+bottle & 95.6\% / 84\,ms & 95.9\% / 86\,ms & $+0.27$ [$-0.47$, $+1.00$] & 95.3\% / 46\,ms \\
+cup    & 95.1\% / 84\,ms & 94.2\% / 32\,ms & $-0.95$ [$-1.93$, $0.00$]  & 94.8\% / 36\,ms \\
+dog    & 97.6\% / 84\,ms & 98.0\% / 33\,ms & $+0.41$ [$-0.27$, $+1.07$] & 97.2\% / 31\,ms \\
+tv     & 98.4\% / 84\,ms & 98.5\% / 53\,ms & $+0.15$ [$-0.40$, $+0.67$] & 98.3\% / 28\,ms \\
+bench  & 96.7\% / 84\,ms & 96.2\% / 41\,ms & $-0.53$ [$-1.27$, $+0.20$] & 96.1\% / 24\,ms \\
+\midrule
+\textbf{Mean} & 96.1\% / 84\,ms & 95.9\% / 51\,ms & & 95.6\% / 36\,ms \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-ACIES achieves \textbf{76\% cost reduction} while maintaining 90.8\% accuracy---a favorable trade-off for resource-constrained deployment. The 8\% accuracy drop is tunable: increasing $\tau$ recovers accuracy at the cost of savings.
+For \emph{bottle} the calibration rule selected the largest price in the grid and the controller
+saved nothing (86\,ms): the rule can fail to find a cheaper setting.
 
-\subsection{Hardware Profile Analysis}
+\subsection{Negative result: detection quality}
+We also asked whether a per-image resolution choice improves mean average precision (mAP50-95).
+A selector spends one cheap pass, extracts label-free features of the detections (counts, confidence
+mass, number of borderline detections, object sizes) and of the image (sharpness, contrast), predicts
+per-resolution quality by ridge regression or boosted trees, and picks a resolution by predicted
+quality minus a cost penalty. It does \emph{not} beat fixed-resolution YOLOv8n: reaching the mAP of
+fixed 640\,px costs 101--124\,ms against 84\,ms. mAP of this model saturates near 512\,px, so the
+first pass consumes the saving. In a 500-image pilot, an oracle that knows the ground truth would have saved about 60\%
+at comparable quality, so the gap is one of prediction, not of headroom (the oracle
+partly exploits label noise and is not attainable). In the same pilot the selector
+seemed to beat the best fixed resolution by 1.1 mAP; at 1500 images the effect disappeared, which illustrates the size of the
+sampling error at this scale.
 
-\Cref{tab:hardware} shows ACIES performance across hardware configurations.
-
-\begin{table}[h]
-\centering
-\caption{ACIES cost across hardware profiles (vs. fixed 1024p baseline).}
-\label{tab:hardware}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Profile} & \textbf{ACIES Cost} & \textbf{Fixed 1024p} & \textbf{Savings} \\
-\midrule
-Default & 260.9 & 448.4 & 42\% \\
-Jetson Orin & 204.4 & 347.1 & 41\% \\
-Raspberry Pi 5 & 287.5 & 525.2 & 45\% \\
-Desktop GPU & 290.6 & 479.0 & 39\% \\
-Edge TPU & 53.4 & 92.0 & 42\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Ablation: Conviction Mechanism}
-
-Removing the conviction mechanism increases oscillation frequency by 40\% near the decision boundary ($P(Y=1) \in [0.90, 0.92]$), confirming the necessity of anti-oscillation for stable deployment.
-
-\subsection{Implementation and Performance}
-
-ACIES is implemented in three languages:
-
-\begin{table}[h]
-\centering
-\caption{Implementation performance.}
-\label{tab:perf}
-\begin{tabular}{lcc}
-\toprule
-\textbf{Backend} & \textbf{Throughput} & \textbf{Language} \\
-\midrule
-Python (stdlib) & 476 images/sec & Python 3.10+ \\
-C++ (ctypes) & 1,500--2,000 images/sec & C++17 \\
-Go CLI & 32,800 runs/sec & Go 1.22+ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The Go implementation achieves 70$\times$ speedup over Python, enabling real-time deployment on edge devices.
+\subsection{Limitations}
+One detector (YOLOv8n) on one CPU, so cost ratios will differ on GPU or edge hardware; binary
+presence decisions; 1500 test images per class (accuracy standard error about 0.6 points); COCO
+only. The channel controller is not novel in its ingredients; its value here is a clean model of what
+perception returns and an evaluation that separates it from a plain cascade. Not addressed:
+multi-class decisions, temporal reuse across video frames, and online adaptation to distribution
+shift.
 
 % ============================================================
-\section{Discussion}
-
-\textbf{Limitations.} ACIES assumes binary classification; extension to multi-class requires reformulating the belief state. The clarity function is currently hand-specified; learning it from data (e.g., via a neural clarity estimator) is future work.
-
-\textbf{Ethical considerations.} Adaptive perception could be exploited to deliberately under-perceive certain inputs. The safety layer mitigates this by enforcing minimum risk guarantees, but deployment-specific auditing is recommended.
-
-\textbf{Broader impact.} ACIES reduces computational cost for vision systems, directly lowering energy consumption and enabling deployment on resource-constrained hardware (medical devices in low-resource settings, satellite imagery, IoT sensors).
+\section{Implementation and Reproducibility}
+The controller, the exact binary optimum, the selector and the benchmark are open source
+(Python, standard library only for the controller; a Go port and a C++ library implement the classic
+simulator's primitives and are not part of the evaluated controller). The C++ library accessed
+through \texttt{ctypes} was measured at 0.75--0.8$\times$ the speed of pure Python. All numbers in
+this paper are produced by \texttt{benchmarks/final\_eval.py} from cached real detections; model
+weights are not redistributed.
 
 % ============================================================
 \section{Conclusion}
+Controlling perception per input is worth doing when the perception model's output is used as
+evidence and the controller plans its escalation, and not worth it when it is described by one
+independent number per action. On YOLOv8n it saves about 40\% of the compute for a decision
+with a small accuracy cost, but a tuned cascade does as well, and it does not improve detection
+mAP. We release the negative results with the evidence.
 
-We presented ACIES, a decision-theoretic framework for adaptive perception control. By treating perception as a cost-risk optimization problem and selecting actions via $\Delta R / C$ maximization with Thompson Sampling, we achieve 76\% computational savings on MNIST with bounded accuracy loss. The framework includes safety guarantees, anti-oscillation mechanisms, and change-point detection for robust deployment.
-
-Future work includes: (1) learning the clarity function from data, (2) extending to multi-class and object detection, (3) hardware-in-the-loop validation on real edge devices, and (4) integration with neural architecture search for action space optimization.
-
-% ============================================================
 \bibliographystyle{plain}
 \bibliography{references}
 

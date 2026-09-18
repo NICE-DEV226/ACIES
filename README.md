@@ -6,17 +6,16 @@
 
 ### Adaptive Perception Control
 
-A decision-theoretic framework for adaptively controlling visual perception
-to minimize computational cost while maintaining target decision risk.
+A decision-theoretic controller that decides **how much perception to spend** on each input —
+which resolution to run, whether to look again — to reach a reliable decision at the lowest cost.
 
 <br>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![Go 1.22+](https://img.shields.io/badge/go-1.22+-00ADD8.svg?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
-[![C++](https://img.shields.io/badge/c%2B%2B-core-00599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white)](#c-acceleration)
-[![Tests](https://img.shields.io/badge/tests-8%2F8%20passed-brightgreen.svg?style=for-the-badge)](#testing)
-[![MNIST](https://img.shields.io/badge/benchmark-MNIST%2010k-ff6f00.svg?style=for-the-badge)](#benchmarks)
+[![Tests](https://img.shields.io/badge/tests-52%20passed-brightgreen.svg?style=for-the-badge)](#testing)
+[![Benchmark](https://img.shields.io/badge/benchmark-YOLOv8n%20on%20COCO-ff6f00.svg?style=for-the-badge)](benchmarks/README.md)
 
 <br>
 
@@ -26,230 +25,177 @@ to minimize computational cost while maintaining target decision risk.
 
 ---
 
-## Why ACIES?
+## What it is
 
-Every perception system wastes resources processing information that doesn't change the decision. ACIES solves this by treating perception as a **cost-risk optimization problem**.
+ACIES is not a vision model. It sits on top of one (YOLO, a classifier, …) and answers, per input:
+*run this action next, or stop and decide?* An **action** is a way of perceiving (a resolution, a
+crop) with a known cost. The controller keeps a belief about the decision, learns what each action
+tells it, and spends the next unit of compute only where it is expected to be worth it.
 
-| | Without ACIES | With ACIES |
-|--|:--:|:--:|
-| **Resolution** | Fixed (max) | Adaptive (optimal) |
-| **Cost** | 385.8 | **93.6** |
-| **Accuracy** | 98.8% | 90.8% |
-| **Savings** | — | **76%** |
+## Does it work? Measured on real YOLO output
 
-> **Trade 8% accuracy for 76% cost reduction.** Or tune the threshold to find your own sweet spot.
+Task: *"is there a `<class>` in the image?"* — YOLOv8n, COCO val2017, 1500 held-out test images per
+class, cost = measured CPU latency. Every setting is chosen on a separate calibration half; the
+test half is measured once ([full protocol and per-class table](benchmarks/README.md)).
+
+| | Accuracy (mean of 8 classes) | Cost |
+|---|:--:|:--:|
+| YOLO at fixed 640 px | 96.1 % | 84 ms |
+| **ACIES v2** (`acies.channel`) | 95.9 % | **51 ms (−40 %)** |
+| Plain 2-stage confidence cascade | 95.6 % | 36 ms (−57 %) |
+| Original controller (v1) | ~92 % | ~71 ms |
+
+**Read this honestly.**
+
+- The original controller (v1) was **worse than fixed-resolution YOLO on every class**. v2 fixes
+  the causes (see below) and gains ≈ +4 accuracy points at ≈ −28 % cost over v1.
+- Against fixed 640 px, v2 saves ~40 % of the compute for −0.2 point on average. It **loses
+  significantly on `person`** (−1.3 pt, 95 % CI [−2.3, −0.4]) and is borderline on `cup`; on the
+  other classes the difference is within noise.
+- **A simple two-stage cascade is as good on the cost/accuracy frontier.** ACIES's value is
+  generality — one knob, no hand-set thresholds, soft evidence, a plan — not a win over a
+  well-tuned cascade.
+- **No gain on detection quality (mAP).** A selector that spends one cheap pass to choose the
+  resolution does not beat fixed-resolution YOLOv8n on mAP50-95: the first pass eats the saving.
+  ACIES helps **decisions** (presence, alerts, counting thresholds), not full detection.
+- One detector, one CPU, binary decisions. GPU/edge cost ratios and other detectors are not measured.
 
 ---
 
-## Quick Start
+## Quick start
 
-### Python (stdlib only, zero dependencies)
+```bash
+git clone https://github.com/NICE-DEV226/ACIES.git && cd ACIES
+pip install -e ".[dev]"        # the core is pure Python, no dependencies
+python3 -m pytest -q test_apc.py test_control.py test_channel.py
+```
+
+### Deployment — the channel controller
+
+Each action is a *channel*: the model's output is quantised into a few outcomes (e.g. bins of the
+top detection confidence) and ACIES learns `P(outcome | class, action)` from labelled examples.
 
 ```python
-from acies import APCController, APCConfig, HardwareProfile
+from acies import HardwareProfile
+from acies.actions import Action, ActionType
+from acies.channel import ChannelController, ChannelConfig, ChannelLearner
 
-apc = APCController(APCConfig(
-    confidence_threshold=0.92,
-    hardware=HardwareProfile.jetson_orin(),
-))
+# cost = your measured latency per action, in ms
+actions = [Action(id=i, name=f"{r}p", action_type=ActionType.RESOLUTION,
+                  base_latency_ms=ms, pixel_ratio=(r / 1024) ** 2)
+           for i, (r, ms) in enumerate([(224, 30.0), (320, 40.0), (640, 84.0)])]
+hw = HardwareProfile(name="ms", latency_weight=1.0, energy_weight=0.0, memory_weight=0.0)
 
-def clarity_fn(action):
-    clarities = {
-        "64p": 0.55, "128p": 0.65, "224p": 0.75,
-        "320p": 0.82, "512p": 0.88, "1024p": 0.93,
-        "crop_224": 0.85, "crop_320": 0.90, "crop_512": 0.92,
-    }
-    return clarities.get(action.name, 0.5)
+# offline, once: outcomes[i][a] = binned output of action a on labelled image i
+learner = ChannelLearner(n_actions=len(actions), n_outcomes=9).fit(outcomes, labels)
 
-result = apc.run(true_class=1, clarity_fn=clarity_fn)
-print(f"Decision: {result.decision} | Cost: {result.total_cost:.1f} | Steps: {result.n_steps}")
+ctl = ChannelController(actions, learner, ChannelConfig(error_cost=1000, carry=0.0, hardware=hw))
+ctl.begin()
+while (a := ctl.next_action()) is not None:
+    ctl.observe(a, my_model_outcome(a))        # no ground truth at deployment
+result = ctl.finish()                          # .decision  .confidence  .total_cost  .actions_taken
 ```
 
-### Go CLI (32,800 runs/sec)
+`error_cost` is the price of one wrong decision in cost units — the single knob that trades
+accuracy for compute. `carry` (0…1) discounts evidence from earlier, correlated actions
+(0 = the latest, most expensive observation replaces earlier ones; best for deterministic detectors).
+
+### The classic controller (binary clarity model)
+
+`APCController` models each action by one number (its "clarity") and is kept for simulation and
+comparison. It has the same step API without ground truth — `begin() / next_action() / observe() /
+finish()` — and `run()` is a simulator built on top. See [docs/python-api.md](docs/python-api.md).
+
+### How far from optimal? — `acies.optimal`
+
+For the binary-symmetric model, `acies.optimal` solves the exact optimal stopping problem (dynamic
+programming), a lower bound on cost that any controller in that model must respect:
 
 ```bash
-go build -o acies-cli .
-
-./acies-cli run --hardware jetson --verbose
-./acies-cli bench --iterations 5000 --hardware rpi
+python3 examples/optimal_gap.py     # classic controller vs the optimal frontier
 ```
 
-### Docker
+### Go CLI and C++ library
 
-```bash
-docker build -t acies .
-docker run acies bench --iterations 1000
-```
+A Go port of the classic simulator (`go build -o acies-cli . && ./acies-cli bench`) and a small C++
+library of the belief/learner primitives (`cd cpp && make`). Both are **simulators/primitives**, not
+the deployment controller: the Go CLI resets its learner on every run, and the C++ library is not
+used by the Python controller (measured 0.75–0.8× the speed of pure Python through `ctypes`).
+Known C++ issues: no bounds checking on action ids, an exception can cross the C ABI on invalid
+sizes, and `ClarityLearner` owns a raw pointer without a copy constructor.
 
 ---
 
-## Installation
-
-```bash
-git clone https://github.com/NICE-DEV226/ACIES.git
-cd ACIES
-```
-
-| Component | Command | Notes |
-|-----------|---------|-------|
-| Python | _(none)_ | stdlib only, zero deps |
-| C++ accelerator | `cd cpp && make` | Optional, 3-5x speedup |
-| Go CLI | `go build -o acies-cli .` | Single binary |
-| Docker | `docker build -t acies .` | Multi-stage, all-in-one |
-
-**Verify:**
-```bash
-python3 test_apc.py          # 8/8 tests
-./acies-cli version          # ACIES v0.1.0
-```
-
----
-
-## Architecture
-
-<div align="center">
-
-<img src="assets/architecture.svg" alt="ACIES Architecture" width="700">
-
-</div>
-
-**Control loop:** Sample → Score (ΔR/C) → Adjust → Filter → Execute → Observe → Update → Repeat
-
----
-
-## How It Works
+## How it works
 
 | Step | Component | What it does |
-|:----:|-----------|-------------|
-| 1 | **Belief Tracking** | Maintains P(Y=1 \| observations) via Bayesian filtering |
-| 2 | **Clarity Estimation** | Thompson Sampling learns P(correct \| action) online |
-| 3 | **Action Scoring** | Computes ΔR/C (risk reduction per cost) for each action |
-| 4 | **Conviction** | Anti-oscillation boosts high-clarity actions near threshold |
-| 5 | **Safety Filtering** | Rejects actions that could exceed risk threshold |
-| 6 | **Change-Point Detection** | Resets posteriors on distribution shifts |
-| 7 | **Decision** | Stops when confidence ≥ threshold or max steps reached |
+|:----:|-----------|--------------|
+| 1 | **Channels** (`ChannelLearner`) | learns `P(outcome | class, action)` with a Dirichlet posterior, and the class prior |
+| 2 | **Belief** | Bayes update in log-odds; `carry` discounts redundant, correlated evidence |
+| 3 | **Plan** (`ChannelController`) | dynamic programming over (belief, lowest action still allowed): run the next action only if its expected error reduction, priced by `error_cost`, exceeds its cost |
+| 4 | **Never repeat** | perception is deterministic: re-running an action adds no information |
+| 5 | **Decision** | Bayes decision from the belief; optional abstention |
 
----
+### What was wrong with the first version
 
-## Benchmarks
+1. **One number per action** treats every observation as an independent coin flip. A deterministic
+   model run twice returns the same answer, but the controller counted it as new evidence and paid again.
+2. **Hard 0/1 votes** discard what the detector says: `0.02` and `0.24` are both "no" but mean very different things.
+3. **An emergency override triggered on the untouched prior** (risk 5.0 ≥ 4.0) and forced the most expensive action on every task. Fixed.
+4. **Greedy value-of-information per cost** starts with the cheapest action even when starting higher would avoid a second pass. Replaced by a plan.
 
-### MNIST (10,000 real images)
+## Known limitations
 
-```bash
-python3 examples/real_benchmark.py
-```
-
-| Method | Accuracy | Cost | Savings |
-|--------|:--------:|:----:|:-------:|
-| Fixed 1024p | 98.8% | 385.8 | — |
-| **ACIES** | **90.8%** | **93.6** | **76%** |
-| Fixed 224p | 82.1% | 76.5 | 80% |
-| Random | 95.5% | 149.6 | 61% |
-
-### Go CLI Performance
-
-```bash
-./acies-cli bench --iterations 5000
-```
-
-**32,800 runs/sec** — 70× faster than Python (476 images/sec)
-
-### Hardware Profiles
-
-| Profile | APC Cost | Fixed 1024p | Savings |
-|---------|:--------:|:-----------:|:-------:|
-| Default | 260.9 | 448.4 | 42% |
-| Jetson Orin | 204.4 | 347.1 | 41% |
-| Raspberry Pi 5 | 287.5 | 525.2 | 45% |
-| Desktop GPU | 290.6 | 479.0 | 39% |
-| Edge TPU | 53.4 | 92.0 | 42% |
-
----
+- **Change-point detection (BOCPD) never fires.** With a constant hazard rate `P(r_t = 0)` equals the hazard rate identically, so the alarm cannot trigger. The module is disabled by default and should not be relied on.
+- **Multi-class belief** (`acies.multiclass`) is a pseudo-count scheme that saturates at the per-observation clarity instead of converging like a Bayesian posterior.
+- Repeated observations are modelled as independent given the class in the classic controller; real errors are correlated across resolutions.
+- Simulated benchmarks of earlier versions (synthetic MNIST "clarity" tables) were removed: they did not measure a real model.
 
 ## Testing
 
 ```bash
-python3 test_apc.py
+python3 -m pytest -q test_apc.py test_control.py test_channel.py     # 52 tests
 ```
 
-| # | Test | Description | Result |
-|:-:|------|-------------|:------:|
-| 1 | Base functionality | Accuracy, cost, exploration | ✓ |
-| 2 | Hard tasks | High difficulty scenarios | ✓ |
-| 3 | Distribution shift | Thompson adaptation | ✓ |
-| 4 | Sensor failure | Degraded reliability | ✓ |
-| 5 | Hardware profiles | All 5 profiles | ✓ |
-| 6 | Stress test | 5,000 iterations | ✓ |
-| 7 | Belief math | Bayesian verification | ✓ |
-| 8 | Thompson convergence | Posterior accuracy | ✓ |
+Highlights: equivalence of the channel model with the binary Bayes update when K = 2; a synthetic
+environment where planning beats greedy by ~25 %; the optimal policy cross-checked by Monte Carlo
+against the real `BeliefState`; regression tests for the emergency-override defect.
 
----
+## Reproducing the benchmarks
 
-## Project Structure
+```bash
+python3 benchmarks/coco_subset.py --n 3000 --seed 0
+python3 benchmarks/measure.py --weights yolov8n.pt --subset ~/.cache/acies-bench/coco/subset_3000_0.json
+python3 benchmarks/final_eval.py --measure <measure_*.pkl> --subset <subset_*.json>
+```
+
+Model weights are Ultralytics (AGPL-3.0) and are not distributed with this repository.
+
+## Project structure
 
 ```
 ACIES/
-├── acies/                  # Python package (8 modules)
-│   ├── controller.py       # Main APC loop
-│   ├── belief.py           # Bayesian belief tracker
-│   ├── clarity_learner.py  # Thompson Sampling
-│   ├── safety.py           # Risk guarantees
-│   ├── conviction.py       # Anti-oscillation
-│   ├── change_point.py     # BOCPD shift detection
-│   ├── actions.py          # Action space & HW profiles
-│   └── accelerator.py      # C++ ctypes wrapper
-│
-├── cpp/                    # C++ core library
-│   ├── belief.h/.cpp       # Belief state
-│   ├── clarity_learner.*   # Thompson Sampling
-│   ├── acies.h/.cpp        # C API
-│   └── Makefile
-│
-├── core.go                 # Go implementation
-├── main.go                 # Go CLI (run/bench/config)
-│
-├── test_apc.py             # 8 robustness tests
-├── examples/               # Benchmarks & demos
-├── docs/                   # 9 documentation files
-├── assets/                 # Logo & visual identity
-├── Dockerfile              # Multi-stage build
-└── README.md
+├── acies/                  # Python package
+│   ├── channel.py          # channel controller (deployment)        ← recommended
+│   ├── optimal.py          # exact optimal policy (binary model)
+│   ├── selector.py         # contextual resolution selector (experimental)
+│   ├── controller.py       # classic controller + simulator
+│   ├── belief.py  clarity_learner.py  safety.py  conviction.py
+│   ├── change_point.py     # BOCPD (does not fire, see limitations)
+│   ├── multiclass.py  actions.py  accelerator.py
+├── benchmarks/             # real benchmark on COCO + YOLO (protocol, results)
+├── cpp/                    # C++ belief/learner primitives
+├── core.go  main.go        # Go port of the classic simulator + CLI
+├── test_apc.py  test_control.py  test_channel.py
+├── examples/  docs/  paper/  assets/
+└── Dockerfile  Makefile
 ```
-
----
 
 ## Documentation
 
-| Doc | Description |
-|-----|-------------|
-| [Installation](docs/installation.md) | Setup guide for Python, Go, C++, Docker |
-| [Architecture](docs/architecture.md) | Deep dive into control loop and algorithms |
-| [Configuration](docs/configuration.md) | All configuration parameters |
-| [CLI Reference](docs/cli-reference.md) | Go CLI commands and flags |
-| [Python API](docs/python-api.md) | Complete Python API reference |
-| [C++ API](docs/cpp-api.md) | C API for FFI (Python/Go/Rust) |
-| [Examples](docs/examples.md) | 10 usage examples |
-| [Benchmarks](docs/benchmarks.md) | Performance results on MNIST |
-| [Contributing](docs/contributing.md) | Development guide |
-
----
-
-## Tech Stack
-
-| Layer | Tech | Performance |
-|-------|------|-------------|
-| CLI | Go | 32,800 runs/sec |
-| Core | Python (stdlib) | 476 images/sec |
-| Accelerator | C++ via ctypes | 3-5× Python speed |
-| Tests | 8 robustness tests | all passing |
-| Benchmark | 5 methods × 5 HW profiles | + MNIST 10k |
-| Deploy | Multi-stage Dockerfile | Python + Go + C++ |
-
----
-
-## Contributing
-
-See [docs/contributing.md](docs/contributing.md).
+[Architecture](docs/architecture.md) · [Configuration](docs/configuration.md) · [Python API](docs/python-api.md)
+· [C++ API](docs/cpp-api.md) · [CLI](docs/cli-reference.md) · [Benchmarks](docs/benchmarks.md)
+· [Contributing](docs/contributing.md)
 
 ## License
 
@@ -264,11 +210,3 @@ MIT License — see [LICENSE](LICENSE).
   url = {https://github.com/NICE-DEV226/ACIES}
 }
 ```
-
----
-
-<div align="center">
-
-**[Documentation](docs/architecture.md)** · **[API Reference](docs/python-api.md)** · **[Examples](examples/)** · **[Contributing](docs/contributing.md)**
-
-</div>

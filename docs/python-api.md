@@ -28,9 +28,33 @@ APCController(config: APCConfig = None, actions: List[Action] = None)
 
 ### Methods
 
-#### `run(true_class, clarity_fn, max_steps=None) → APCResult`
+#### Step API — deployment (no ground truth)
 
-Execute APC on a single task.
+The controller decides; your perception pipeline produces observations.
+
+```python
+apc.begin()                                   # new task (resets belief, keeps learning)
+while (action := apc.next_action()) is not None:
+    obs = my_perception(action)               # 0/1 vote from the model run at `action`
+    apc.observe(action, obs)                  # clarity defaults to the learned estimate
+result = apc.finish()                         # result.decision in {0, 1, -1 (abstain)}
+                                              # result.correct is None (truth unknown)
+apc.feedback(action, correct=True)            # optional: delayed label updates the learner
+```
+
+| Method | Description |
+|--------|-------------|
+| `begin(max_steps=None)` | Start a task. Resets belief and conviction; keeps learned clarities. |
+| `next_action() → Optional[Action]` | Next action, or `None` to stop (confident, max steps, cost budget, degradation). |
+| `observe(action, obs, clarity=None, correct=None) → APCStep` | Record the 0/1 observation. Pass `clarity` only if truly known; pass `correct` if the label is already known. |
+| `feedback(action, correct)` | Late label: updates the clarity estimate of `action`. |
+| `finish(true_class=None) → APCResult` | End the task and return the result. |
+
+#### `run(true_class, clarity_fn, max_steps=None, oracle_clarity=True) → APCResult`
+
+**Simulation** of a full task against a synthetic environment (built on the step API).
+`oracle_clarity=True` updates the belief with the simulator's true clarity (historical
+behaviour); `False` uses the learned estimate, as in deployment.
 
 ```python
 result = apc.run(
@@ -45,6 +69,7 @@ result = apc.run(
 | `true_class` | int | True class label (0 or 1) |
 | `clarity_fn` | Callable[[Action], float] | Function returning clarity for an action |
 | `max_steps` | int | Maximum steps (overrides config) |
+| `oracle_clarity` | bool | Belief uses the simulator's true clarity (`True`) or the learned estimate (`False`) |
 
 #### `batch_run(tasks, n_trials=1) → List[APCResult]`
 
@@ -237,7 +262,7 @@ SafetyLayer(config: SafetyConfig = None)
 
 ### Methods
 
-#### `select(belief, candidates, n_observations, clarity_estimates=None) → Optional[Action]`
+#### `select(belief, candidates, n_observations, clarity_estimates=None, emergency_clarity=None) → Optional[Action]`
 
 Select a safe action from candidates. Returns `None` if abstention is preferred.
 
@@ -334,3 +359,30 @@ HardwareProfile.raspberry_pi5()  # Raspberry Pi 5
 HardwareProfile.desktop_gpu()    # RTX 4090
 HardwareProfile.edge_tpu()       # Coral TPU
 ```
+
+
+---
+
+## Optimal policy (`acies.optimal`)
+
+Exact baseline for the model ACIES assumes (symmetric channel, i.i.d. observations given
+the class): finite-horizon optimal stopping solved by dynamic programming over the belief.
+No controller that follows this model can beat it, so it is the yardstick for any heuristic.
+
+```python
+from acies import build_standard_actions, HardwareProfile
+from acies.optimal import solve_optimal, frontier, min_cost_for_error
+
+acts, hw = build_standard_actions(), HardwareProfile.default()
+clarity = {"64p": 0.55, "128p": 0.65, "224p": 0.75, "320p": 0.82, "512p": 0.88,
+           "1024p": 0.93, "crop_224": 0.85, "crop_320": 0.90, "crop_512": 0.92}
+
+policy = solve_optimal(acts, clarity, hw, error_cost=1000, horizon=6)
+policy.evaluate()                 # OptimalEvaluation(cost=37.4, error=0.0158, steps=3.5)
+policy.action(belief=0.5, step=0) # first Action, or None to stop
+min_cost_for_error(acts, clarity, hw, target_error=0.02)   # cheapest cost at <= 2 % error
+frontier(acts, clarity, hw, [200, 1000, 3000])              # (λ, evaluation) points
+```
+
+`error_cost` (λ) is the price of one wrong decision in cost units. `python3 examples/optimal_gap.py`
+compares `APCController` with this frontier.

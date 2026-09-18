@@ -1,71 +1,18 @@
-# Reddit Post — r/MachineLearning
+# Post draft
 
-## Title
-[P] ACIES: Save 97% of compute on noisy images by adaptively selecting what to perceive — open source
+**Title:** ACIES — a controller that decides how much perception to spend per image (YOLOv8n/COCO: −40 % compute for −0.2 pt on presence decisions)
 
-## Body
+I built a controller that sits on top of a vision model and decides, per image, which resolution to
+run next or whether to stop. Each action is modelled as a channel `P(outcome | class, action)` learned
+from labelled examples; a dynamic-programming plan runs the next action only if its expected error
+reduction (priced by one `error_cost` knob) exceeds its compute cost.
 
-I've been working on ACIES (Adaptive Perception Control), a framework that treats visual perception as a **resource allocation problem** instead of a fixed pipeline.
+Measured on real YOLOv8n detections (COCO val2017, 8 classes, 1500 held-out images each, everything
+tuned on a separate split, CPU latency): −40 % compute vs fixed 640 px for −0.2 accuracy points on
+average. It loses significantly on `person` (−1.3 pt). A plain two-stage confidence cascade reaches a
+similar frontier, so the value is generality rather than a win over a tuned cascade. It does not
+improve full-detection mAP. My first version was worse than fixed-resolution YOLO on every class;
+the write-up explains why (repeated deterministic observations counted as independent, hard 0/1
+votes, an override that always forced the most expensive action).
 
-### The problem
-
-Every vision system processes every image at the same resolution, regardless of difficulty. A clear image and a noisy one get identical treatment. This wastes compute.
-
-### The solution
-
-ACIES adaptively selects *what* to perceive (resolution, crops) by maximizing **ΔR/C** — risk reduction per unit cost. It uses:
-- Thompson Sampling for online clarity estimation
-- Bayesian belief tracking
-- Anti-oscillation conviction mechanism
-- Bayesian change-point detection for distribution shifts
-
-### Real results (trained CNN on MNIST, noisy images)
-
-| Method | Accuracy | Cost |
-|--------|:--------:|:----:|
-| Fixed 28x28 (noisy) | 67.3% | 187.2 |
-| **ACIES adaptive** | **97.7%** | 369.4 |
-
-On clean images, ACIES achieves **76% cost savings** with only 8% accuracy drop vs full resolution.
-
-The action distribution shows ACIES automatically chooses 1024p for 83.7% of noisy images — it *knows* when to spend more compute.
-
-### What's under the hood
-
-- Thompson Sampling with Beta(2,2) prior
-- Bayesian filter for belief tracking
-- BOCPD for change-point detection
-- Safety layer with hard risk guarantees
-- Conviction mechanism prevents oscillation
-
-### Performance
-
-- Python: 476 images/sec (stdlib only, zero deps)
-- Go: 32,800 runs/sec
-- C++ via ctypes: 1,500-2,000 images/sec
-
-### Open source
-
-- MIT license
-- Python + Go + C++ implementations
-- `pip install acies`
-- 8/8 robustness tests passing
-- Full docs (9 files)
-
-GitHub: https://github.com/NICE-DEV226/ACIES
-
-### Looking for contributors
-
-🟢 Good first issues: add blur/brightness actions, JSON export
-🟡 Intermediate: logging, metrics
-🔴 Advanced: multi-class extension, neural clarity estimator
-
-Happy to answer questions about the math or implementation.
-
----
-
-# Alternative title options:
-
-1. **[R] ACIES: Adaptive Perception Control — save 76% compute by choosing what to perceive**
-2. **[P] We trained a CNN + ACIES on MNIST. On noisy images, ACIES got 97.7% accuracy while fixed resolution got 67.3%. Open source.**
-3. **[D] What if vision systems could decide *how hard* to look at each image? We built ACIES to find out.**
+Code, protocol and per-class tables with confidence intervals: https://github.com/NICE-DEV226/ACIES

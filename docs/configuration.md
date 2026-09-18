@@ -29,7 +29,7 @@ config = APCConfig(
 | `confidence_threshold` | float | 0.5 | Stop when confidence exceeds this value. |
 | `max_steps` | int | 6 | Maximum number of perception steps. |
 | `max_risk` | float | 2.0 | Maximum acceptable risk level. |
-| `emergency_risk` | float | 4.0 | Risk level that triggers emergency override. |
+| `emergency_risk` | float | 4.0 | Risk level that triggers emergency override. Only applies after at least one observation (the untouched prior has risk 5.0). |
 | `min_observations` | int | 1 | Minimum observations before allowing a decision. |
 | `hardware` | HardwareProfile | default | Hardware cost profile. |
 | `conviction_zone_start` | float | 0.85 | Fraction of threshold to enter conviction zone. |

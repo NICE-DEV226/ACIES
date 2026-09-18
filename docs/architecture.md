@@ -104,7 +104,7 @@ The safety layer applies 5 rules in order at each step:
 
 | # | Rule | Condition | Action |
 |:-:|------|-----------|--------|
-| 1 | Emergency | risk >= 4.0 | Force most informative action |
+| 1 | Emergency | n_obs >= 1 and risk >= 4.0 | Force most informative action (learned clarity) |
 | 2 | Min obs | n_obs < 1 | Force best action |
 | 3 | Confident | confidence >= 0.95 | STOP |
 | 4 | Filter | risk > 2.0 or clarity < 0.5 | Reject action |
@@ -157,8 +157,8 @@ This provides:
 The safety layer is a hard constraint that never lets the controller make a decision that could exceed the risk threshold:
 
 ```
-if current_risk ≥ emergency_risk:
-    → Force most informative action (emergency override)
+if n_obs ≥ 1 and current_risk ≥ emergency_risk:
+    → Force most informative action (emergency override; never on the untouched prior)
 elif expected_risk(action) > max_risk:
     → Reject action
 elif confidence ≥ threshold:

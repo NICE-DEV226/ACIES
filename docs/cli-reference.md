@@ -94,14 +94,14 @@ acies-cli bench --hardware rpi --iterations 2000
 ```
 ACIES Benchmark — Jetson Orin Nano — 5000 iterations
 ───────────────────────────────────────────────────────
-Accuracy:    93.6%
-Avg cost:    442.7
-Max cost:    868.8
-Avg steps:   5.1
-EPC:         473.0
-Time:        15ms (32800 runs/sec)
+Accuracy:    85.4%
+Avg cost:    223.7
+Max cost:    503.1
+Avg steps:   5.6
+EPC:         261.9
+Time:        160ms (31058 runs/sec)
 
-vs Fixed 1024p (cost=145): 206% more expensive
+vs Fixed 1024p (cost=145): 55% more expensive
 ```
 
 #### `acies-cli config`
@@ -147,7 +147,7 @@ Show version.
 
 ```bash
 acies-cli version
-# ACIES v0.1.0
+# ACIES v0.1.4
 ```
 
 ## Python Module
