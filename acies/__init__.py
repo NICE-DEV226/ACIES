@@ -21,6 +21,7 @@ from .safety import SafetyLayer, SafetyConfig, SafetyState
 from .conviction import Conviction, ConvictionConfig, ConvictionState
 from .change_point import ChangePointDetector, ChangePointConfig
 from .controller import APCController, APCConfig, APCResult, APCStep
+from .optimal import OptimalPolicy, OptimalEvaluation, solve_optimal, frontier, min_cost_for_error
 
 __all__ = [
     "Action", "ActionType", "HardwareProfile", "build_standard_actions",
@@ -30,6 +31,7 @@ __all__ = [
     "Conviction", "ConvictionConfig", "ConvictionState",
     "ChangePointDetector", "ChangePointConfig",
     "APCController", "APCConfig", "APCResult", "APCStep",
+    "OptimalPolicy", "OptimalEvaluation", "solve_optimal", "frontier", "min_cost_for_error",
 ]
 
 __version__ = "0.1.4"

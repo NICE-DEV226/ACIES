@@ -10,7 +10,7 @@ install-dev: ## Install in development mode
 	pip install -e ".[dev]"
 
 test: ## Run all tests
-	python3 test_apc.py
+	python3 -m pytest -q test_apc.py test_control.py test_channel.py
 
 build-go: ## Build Go CLI
 	go build -o acies-cli .

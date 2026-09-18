@@ -342,12 +342,17 @@ func (s *SafetyLayer) Reset() {
 	s.State = SafetyState{}
 }
 
-func (s *SafetyLayer) Select(belief *BeliefState, candidates []ScoredAction, nObs int, clarityEst map[int]float64) *Action {
+// Select picks a safe action, or nil to stop. emergencyClarity ranks emergency
+// actions (learned clarity if tried, monotone-in-resolution prior otherwise); nil
+// falls back to the prior.
+func (s *SafetyLayer) Select(belief *BeliefState, candidates []ScoredAction, nObs int, clarityEst map[int]float64, emergencyClarity map[int]float64) *Action {
 	currentRisk := belief.Risk()
 
-	if currentRisk >= s.Config.EmergencyRisk {
+	// Never on the untouched prior: at belief=0.5 the risk is already 10*0.5 = 5.0
+	// >= EmergencyRisk, which would force the most expensive action on every task.
+	if nObs >= 1 && currentRisk >= s.Config.EmergencyRisk {
 		s.State.NEmergency++
-		return s.emergencyAction(belief, candidates)
+		return s.emergencyAction(belief, candidates, emergencyClarity)
 	}
 	if nObs < s.Config.MinObservations {
 		return &candidates[0].Action
@@ -374,7 +379,7 @@ func (s *SafetyLayer) Select(belief *BeliefState, candidates []ScoredAction, nOb
 
 	if len(safe) == 0 {
 		s.State.NEmergency++
-		return s.emergencyAction(belief, candidates)
+		return s.emergencyAction(belief, candidates, emergencyClarity)
 	}
 
 	action := safe[0].Action
@@ -382,13 +387,18 @@ func (s *SafetyLayer) Select(belief *BeliefState, candidates []ScoredAction, nOb
 	return &action
 }
 
-func (s *SafetyLayer) emergencyAction(belief *BeliefState, candidates []ScoredAction) *Action {
+func (s *SafetyLayer) emergencyAction(belief *BeliefState, candidates []ScoredAction, emergencyClarity map[int]float64) *Action {
+	expected := func(a Action) float64 {
+		if c, ok := emergencyClarity[a.ID]; ok {
+			return c
+		}
+		return 0.5 + 0.49*a.PixelRatio
+	}
 	best := candidates[0]
-	for _, c := range candidates {
-		dr := belief.DeltaRisk(0.5 + 0.49*c.Action.PixelRatio)
-		drBest := belief.DeltaRisk(0.5 + 0.49*best.Action.PixelRatio)
-		if dr > drBest {
-			best = c
+	bestDR := belief.DeltaRisk(expected(best.Action))
+	for _, c := range candidates[1:] {
+		if dr := belief.DeltaRisk(expected(c.Action)); dr > bestDR {
+			best, bestDR = c, dr
 		}
 	}
 	return &best.Action
@@ -513,7 +523,15 @@ func Run(cfg APCConfig, trueClass int, clarityFn func(Action) float64) Result {
 		for i, a := range actions {
 			clarityEst[a.ID] = learner.Mean(i)
 		}
-		safeAction := safety.Select(belief, scored, len(steps), clarityEst)
+		emergencyClarity := make(map[int]float64)
+		for i, a := range actions {
+			if learner.Posteriors[i].Alpha+learner.Posteriors[i].Beta > 4 { // tried at least once
+				emergencyClarity[a.ID] = learner.Mean(i)
+			} else {
+				emergencyClarity[a.ID] = 0.5 + 0.49*a.PixelRatio
+			}
+		}
+		safeAction := safety.Select(belief, scored, len(steps), clarityEst, emergencyClarity)
 		if safeAction == nil {
 			break
 		}

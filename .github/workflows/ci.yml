@@ -34,7 +34,7 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Run tests
-        run: python3 -m pytest test_apc.py -v
+        run: python3 -m pytest test_apc.py test_control.py test_channel.py -v
 
   # ─────────────────────────────────────────────
   # Job 2: Go Build & Test

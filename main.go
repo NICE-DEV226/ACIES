@@ -26,7 +26,7 @@ func main() {
 	case "config":
 		cmdConfig()
 	case "version":
-		fmt.Println("ACIES v0.1.0")
+		fmt.Println("ACIES v0.1.4")
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", os.Args[1])
 		printUsage()

@@ -3,7 +3,8 @@ ACIES — Safety Layer
 
 5 decision rules, applied in order:
 
-  1. EMERGENCY  — risk >= emergency_risk? → force most informative action
+  1. EMERGENCY  — risk >= emergency_risk AFTER at least one observation?
+                  → force most informative action (never on the untouched prior)
   2. MIN_OBS    — not enough observations? → force best action
   3. CONFIDENT  — confidence >= threshold? → STOP (return None)
   4. FILTER     — remove actions with risk > max_risk or clarity < min
@@ -61,6 +62,7 @@ class SafetyLayer:
         candidates: List[Tuple[Action, float]],  # (action, score ΔR/C)
         n_observations: int,
         clarity_estimates: Dict[int, float] = None,  # Thompson Sampling estimates
+        emergency_clarity: Dict[int, float] = None,  # clarity used to rank emergency actions
     ) -> Optional[Action]:
         """
         Sélectionne une action sûre parmi les candidates.
@@ -70,6 +72,8 @@ class SafetyLayer:
             candidates: Liste de (action, score ΔR/C) triée par score décroissant
             n_observations: Nombre total d'observations déjà faites
             clarity_estimates: Estimations de clarté par Thompson Sampling
+            emergency_clarity: Clarté attendue par action pour classer les actions
+                d'urgence (appris si l'action a été essayée, sinon a priori)
 
         Returns:
             Action sélectionnée, ou None si l'abstention est préférable
@@ -77,8 +81,11 @@ class SafetyLayer:
         current_risk = belief.risk
 
         # ── Règle 1 : Emergency override ──
-        if current_risk >= self.config.emergency_risk:
-            return self._emergency_action(belief, candidates)
+        # Jamais sur le prior non observé : à belief=0.5 le risque vaut déjà
+        # 10*0.5 = 5.0 >= emergency_risk, l'override forcerait donc l'action la
+        # plus chère à chaque tâche et court-circuiterait tout le scoring ΔR/C.
+        if n_observations >= 1 and current_risk >= self.config.emergency_risk:
+            return self._emergency_action(belief, candidates, emergency_clarity)
 
         # ── Règle 2 : Minimum d'observations ──
         if n_observations < self.config.min_observations:
@@ -106,8 +113,7 @@ class SafetyLayer:
                 safe_candidates.append((action, score))
 
         if not safe_candidates:
-            self.state.n_emergency += 1
-            return self._emergency_action(belief, candidates)
+            return self._emergency_action(belief, candidates, emergency_clarity)
 
         # ── Règle 5 : Sélection du meilleur score sûr ──
         best_action = safe_candidates[0][0]
@@ -120,15 +126,24 @@ class SafetyLayer:
         self,
         belief: BeliefState,
         candidates: List[Tuple[Action, float]],
+        emergency_clarity: Dict[int, float] = None,
     ) -> Action:
         """
         Action d'urgence : choisit l'action la plus informative
         (réduction de risque maximale, indépendamment du coût).
+
+        La clarté utilisée est celle apprise (ou l'a priori pour une action
+        jamais essayée) ; à défaut, un a priori monotone en résolution.
+        En cas d'égalité, l'ordre des candidats (score) départage.
         """
         self.state.n_emergency += 1
-        # Trier par ΔR brut (pas divisé par coût)
-        best = max(candidates, key=lambda x: belief.delta_risk(
-            0.5 + 0.49 * x[0].pixel_ratio))
+
+        def expected_clarity(action: Action) -> float:
+            if emergency_clarity and action.id in emergency_clarity:
+                return emergency_clarity[action.id]
+            return 0.5 + 0.49 * action.pixel_ratio
+
+        best = max(candidates, key=lambda x: belief.delta_risk(expected_clarity(x[0])))
         return best[0]
 
     def _best_informative(

@@ -92,8 +92,8 @@ class APCStep:
 @dataclass
 class APCResult:
     """Résultat complet de l'exécution du contrôleur."""
-    decision: int
-    correct: bool
+    decision: int            # 0/1, or -1 when abstaining
+    correct: Optional[bool]  # None when the true class is unknown (deployment)
     total_cost: float
     total_latency_ms: float
     total_energy_mJ: float
@@ -131,6 +131,25 @@ class APCResult:
             "avg_clarity": round(self.avg_clarity, 3),
             "actions": self.actions_taken,
         }
+
+
+@dataclass
+class _TaskState:
+    """État d'une tâche en cours (une image / une décision)."""
+    max_steps: int
+    emergency_base: int
+    steps: List[APCStep] = field(default_factory=list)
+    total_cost: float = 0.0
+    total_latency: float = 0.0
+    total_energy: float = 0.0
+    peak_memory: float = 0.0
+    total_flops: float = 0.0
+    low_clarity_count: int = 0
+    clarity_sum: float = 0.0
+    degraded: bool = False
+    budget_exceeded: bool = False
+    done: bool = False
+    pending: Optional[Action] = None
 
 
 class APCController:
@@ -189,6 +208,7 @@ class APCController:
 
         # Historique
         self._run_history: List[APCResult] = []
+        self._task: Optional[_TaskState] = None
 
     def reset(self):
         """Remet le contrôleur à zéro (nouvelle image/tâche)."""
@@ -197,12 +217,15 @@ class APCController:
         self.conviction.reset()
         if self.change_detector:
             self.change_detector.reset()
+        self._task = None
 
     def reset_all(self):
         """Remet tout (beliefs + learner + safety)."""
         self.belief.reset()
         self.learner = ClarityLearner(n_actions=len(self.actions))
         self.safety.reset()
+        self.conviction.reset()
+        self._task = None
         self._run_history.clear()
 
     def _score_actions(self) -> List[Tuple[Action, float, float]]:
@@ -251,193 +274,251 @@ class APCController:
 
         return scored
 
+    # ------------------------------------------------------------------
+    # Step API — décision découplée de l'environnement
+    #
+    #   apc.begin()
+    #   while (action := apc.next_action()) is not None:
+    #       obs = my_perception(action)          # 0/1 : vote de la perception
+    #       apc.observe(action, obs)             # aucune vérité terrain requise
+    #   result = apc.finish()                    # result.decision, result.abstained
+    #   apc.feedback(action, correct=True)       # optionnel : label tardif
+    # ------------------------------------------------------------------
+
+    def _require_task(self) -> _TaskState:
+        if self._task is None:
+            raise RuntimeError("No task in progress: call begin() first")
+        return self._task
+
+    def begin(self, max_steps: int = None):
+        """Démarre une tâche. Remet à zéro l'état par-tâche, garde ce qui est appris."""
+        self.belief.reset()
+        self.conviction.reset()
+        self._task = _TaskState(
+            max_steps=self.config.max_steps if max_steps is None else max_steps,
+            emergency_base=self.safety.state.n_emergency,
+        )
+
+    def _emergency_clarity(self) -> Dict[int, float]:
+        """Clarté attendue par action pour l'action d'urgence : apprise si essayée,
+        sinon a priori monotone en résolution (jamais l'ancienne valeur fixe)."""
+        out = {}
+        for i, a in enumerate(self.actions):
+            if self.learner.n_observations(i) > 0:
+                out[a.id] = self.learner.mean(i)
+            else:
+                out[a.id] = 0.5 + 0.49 * a.pixel_ratio
+        return out
+
+    def next_action(self) -> Optional[Action]:
+        """
+        Choisit la prochaine action de perception, ou None s'il faut s'arrêter
+        (confiance atteinte, nombre max d'étapes, budget de coût, dégradation).
+        """
+        t = self._require_task()
+        if t.done:
+            return None
+        if t.pending is not None:
+            raise RuntimeError("observe() must be called for the pending action first")
+        if t.degraded or len(t.steps) >= t.max_steps:
+            t.done = True
+            return None
+        if t.total_cost >= self.config.max_cost_per_image:
+            t.budget_exceeded = True
+            t.done = True
+            return None
+
+        self.conviction.update(self.belief.confidence)
+        scored = self._score_actions()
+        candidates = [(a, s) for a, s, c in scored]
+        clarity_estimates = {self.actions[i].id: self.learner.mean(i)
+                            for i in range(len(self.actions))}
+        action = self.safety.select(
+            self.belief, candidates, len(t.steps),
+            clarity_estimates=clarity_estimates,
+            emergency_clarity=self._emergency_clarity(),
+        )
+        if action is None:
+            t.done = True  # STOP décidé par la couche de sécurité
+            return None
+
+        # Budget vérifié AVANT d'exécuter l'action
+        if t.total_cost + action.cost(self.config.hardware) > self.config.max_cost_per_image:
+            t.budget_exceeded = True
+            t.done = True
+            return None
+
+        t.pending = action
+        return action
+
+    def observe(
+        self,
+        action: Action,
+        obs: int,
+        clarity: float = None,
+        correct: bool = None,
+    ) -> APCStep:
+        """
+        Enregistre l'observation (0/1) produite par `action`.
+
+        Args:
+            action: l'action renvoyée par next_action()
+            obs: vote binaire de la perception
+            clarity: P(obs correcte | action) à utiliser pour la mise à jour bayésienne.
+                Par défaut, l'estimation apprise (moyenne du posterior Beta) : aucune
+                vérité terrain n'est requise. Fournir une valeur seulement si elle est
+                réellement connue (simulation, modèle calibré).
+            correct: si le label est connu maintenant, met à jour l'apprentissage de
+                clarté. Sinon, appeler feedback() plus tard ou ne rien faire.
+        """
+        t = self._require_task()
+        if t.pending is None or t.pending.id != action.id:
+            raise RuntimeError("observe() must follow next_action() with the same action")
+        if obs not in (0, 1):
+            raise ValueError(f"obs must be 0 or 1, got {obs!r}")
+        if clarity is None:
+            clarity = self.learner.mean(action.id)
+        if not 0.0 <= clarity <= 1.0:
+            raise ValueError(f"clarity must be in [0, 1], got {clarity!r}")
+        clarity = min(max(clarity, 0.01), 0.99)
+        t.pending = None
+
+        hw = self.config.hardware
+        cost = action.cost(hw)
+        clarity_sampled = self.learner.sample(action.id)
+        score = self.belief.delta_risk_efficiency(clarity_sampled, cost)
+        belief_before = self.belief.belief
+        risk_before = self.belief.risk
+
+        # Détection de dégradation (clarté basse consécutive)
+        t.clarity_sum += clarity
+        if clarity < self.config.min_clarity_threshold:
+            t.low_clarity_count += 1
+        else:
+            t.low_clarity_count = 0
+        if t.low_clarity_count >= self.config.degradation_patience:
+            t.degraded = True
+
+        self.belief.update(obs, clarity)
+        if correct is not None:
+            self.learner.update(action.id, correct)
+
+        if self.change_detector:
+            if self.change_detector.update(action.id, clarity):
+                self.learner.reset_posterior(action.id)
+                if self.config.verbose:
+                    print(f"    ⚡ CHANGE POINT detected on {action.name} "
+                          f"at step {len(t.steps)}")
+
+        safe = self.safety.check_post_action(self.belief, action)
+
+        latency = action.base_latency_ms * hw.latency_scale
+        t.total_cost += cost
+        t.total_latency += latency
+        t.total_energy += action.base_energy_mJ * hw.energy_scale
+        t.peak_memory = max(t.peak_memory, action.base_memory_MB * hw.memory_scale)
+        t.total_flops += action.pixel_ratio * 1400
+
+        step = APCStep(
+            step=len(t.steps), action=action, observation=obs,
+            belief_before=belief_before, belief_after=self.belief.belief,
+            risk_before=risk_before, risk_after=self.belief.risk,
+            score=score, clarity_sampled=clarity_sampled, clarity_true=clarity,
+            cost=cost, latency_ms=latency, safe=safe,
+        )
+        t.steps.append(step)
+
+        if self.config.verbose:
+            zone = (f" [CONVICTION ZONE, step={self.conviction.state.zone_steps}]"
+                    if self.conviction.state.in_zone else "")
+            print(f"  Step {step.step}: {action.name} "
+                  f"(clarity={clarity:.2f}, score={score:.3f}) "
+                  f"→ obs={obs}, belief={self.belief.belief:.3f} "
+                  f"risk={self.belief.risk:.3f}{zone}")
+        return step
+
+    def feedback(self, action: Action, correct: bool):
+        """Label tardif : met à jour l'estimation de clarté de `action`."""
+        self.learner.update(action.id, correct)
+
+    def finish(self, true_class: int = None) -> APCResult:
+        """Termine la tâche et renvoie le résultat (décision, ou abstention = -1)."""
+        t = self._require_task()
+        n_steps_done = len(t.steps)
+        avg_clarity = t.clarity_sum / max(n_steps_done, 1)
+
+        # Abstention si pas assez d'observations OU confiance trop basse
+        abstained = (
+            n_steps_done < self.config.min_observations or
+            self.belief.confidence < self.config.abstention_confidence
+        )
+        if abstained:
+            decision = -1
+            correct = False if true_class is not None else None
+        else:
+            decision = self.belief.decision
+            correct = (decision == true_class) if true_class is not None else None
+
+        result = APCResult(
+            decision=decision,
+            correct=correct,
+            total_cost=t.total_cost,
+            total_latency_ms=t.total_latency,
+            total_energy_mJ=t.total_energy,
+            peak_memory_MB=t.peak_memory,
+            total_flops_M=t.total_flops,
+            n_steps=n_steps_done,
+            n_emergency=self.safety.state.n_emergency - t.emergency_base,
+            steps=t.steps,
+            final_belief=self.belief.belief,
+            final_risk=self.belief.risk,
+            abstained=abstained,
+            degraded=t.degraded,
+            cost_budget_exceeded=t.budget_exceeded,
+            avg_clarity=avg_clarity,
+        )
+        self._run_history.append(result)
+        self._task = None
+        return result
+
     def run(
         self,
         true_class: int,
         clarity_fn: Callable[[Action], float],
         max_steps: int = None,
+        oracle_clarity: bool = True,
     ) -> APCResult:
         """
-        Exécute le contrôleur APC sur une tâche.
+        SIMULATION : exécute une tâche complète contre un environnement synthétique.
+
+        Génère les observations à partir de `true_class` et `clarity_fn` (canal
+        symétrique). Pour un déploiement réel, utiliser begin/next_action/observe/finish.
 
         Args:
-            true_class: La vraie classe (0 ou 1) — pour la simulation
-            clarity_fn: Fonction qui retourne la vraie clarté pour une action
-            max_steps: Nombre maximum d'étapes ( défaut: config.max_steps)
-
-        Returns:
-            APCResult avec toutes les métriques
+            true_class: La vraie classe (0 ou 1), utilisée par le simulateur
+            clarity_fn: clarté réelle (simulateur) d'une action
+            max_steps: Nombre maximum d'étapes (défaut: config.max_steps)
+            oracle_clarity: True (défaut, comportement historique) : le belief est mis
+                à jour avec la vraie clarté du simulateur. False : avec l'estimation
+                apprise, comme en déploiement (résultats plus réalistes, démarrage plus
+                lent car le prior Beta(2,2) ne donne aucune information au début).
         """
-        if max_steps is None:
-            max_steps = self.config.max_steps
-
-        self.belief.reset()
-        total_cost = 0.0
-        total_latency = 0.0
-        total_energy = 0.0
-        peak_memory = 0.0
-        total_flops = 0.0
-        steps = []
-        n_emergency = 0
-        low_clarity_count = 0  # Compteur de steps avec clarity basse
-        clarity_sum = 0.0      # Somme des clarités observées
-        degraded = False
-        cost_budget_exceeded = False
-
-        for step in range(max_steps):
-            # ── ROBUSTESSE: Budget max ──
-            if total_cost >= self.config.max_cost_per_image:
-                cost_budget_exceeded = True
+        self.begin(max_steps)
+        while True:
+            action = self.next_action()
+            if action is None:
                 break
-
-            # 0. Mettre à jour la conviction
-            self.conviction.update(self.belief.confidence)
-
-            # 1. Scanner les actions et calculer les scores
-            scored = self._score_actions()
-
-            # 2. Safety layer : sélectionner une action sûre
-            candidates = [(a, s) for a, s, c in scored]
-            n_obs = sum(1 for s in steps)
-            clarity_estimates = {self.actions[i].id: self.learner.mean(i)
-                                for i in range(len(self.actions))}
-            safe_action = self.safety.select(
-                self.belief, candidates, n_obs,
-                clarity_estimates=clarity_estimates,
-            )
-
-            if safe_action is None:
-                # STOP (safety layer decided)
-                break
-
-            # 3.5. Check budget BEFORE executing action
-            action_cost = safe_action.cost(self.config.hardware)
-            if total_cost + action_cost > self.config.max_cost_per_image:
-                cost_budget_exceeded = True
-                break
-
-            # 3. Vérifier l'urgence
-            if self.safety.state.n_emergency > n_emergency:
-                n_emergency = self.safety.state.n_emergency
-
-            # 4. Exécuter l'action
-            clarity_true = clarity_fn(safe_action)
-            clarity_sampled = self.learner.sample(safe_action.id)
-            cost = safe_action.cost(self.config.hardware)
-
-            # ── ROBUSTESSE: Détection de dégradation ──
-            clarity_sum += clarity_true
-            if clarity_true < self.config.min_clarity_threshold:
-                low_clarity_count += 1
-            else:
-                low_clarity_count = 0
-
-            # Si trop de steps avec clarity basse → image dégradée
-            if low_clarity_count >= self.config.degradation_patience:
-                degraded = True
-                break
-
-            # 5. Générer l'observation (bruitée par la clarté)
+            clarity_true = clarity_fn(action)
             if true_class == 1:
                 obs = 1 if random.random() < clarity_true else 0
             else:
                 obs = 0 if random.random() < clarity_true else 1
-
-            # 6. Calculer le score de cette action
-            score = self.belief.delta_risk_efficiency(clarity_sampled, cost)
-
-            # 7. Mettre à jour les états
-            belief_before = self.belief.belief
-            risk_before = self.belief.risk
-
-            self.belief.update(obs, clarity_true)
-
-            # 8. Mettre à jour le learner
-            observation_correct = (obs == true_class)
-            self.learner.update(safe_action.id, observation_correct)
-
-            # 8b. Détection de changement point
-            if self.change_detector:
-                is_cp = self.change_detector.update(safe_action.id, clarity_true)
-                if is_cp:
-                    self.learner.reset_posterior(safe_action.id)
-                    if self.config.verbose:
-                        print(f"    ⚡ CHANGE POINT detected on {safe_action.name} "
-                              f"at step {step}")
-
-            # 9. Vérifier la sécurité post-action
-            safe = self.safety.check_post_action(self.belief, safe_action)
-
-            # 10. Accumuler les coûts
-            total_cost += cost
-            total_latency += safe_action.base_latency_ms * self.config.hardware.latency_scale
-            total_energy += safe_action.base_energy_mJ * self.config.hardware.energy_scale
-            peak_memory = max(peak_memory, safe_action.base_memory_MB * self.config.hardware.memory_scale)
-            total_flops += safe_action.pixel_ratio * 1400
-
-            # 11. Enregistrer le step
-            steps.append(APCStep(
-                step=step,
-                action=safe_action,
-                observation=obs,
-                belief_before=belief_before,
-                belief_after=self.belief.belief,
-                risk_before=risk_before,
-                risk_after=self.belief.risk,
-                score=score,
-                clarity_sampled=clarity_sampled,
-                clarity_true=clarity_true,
-                cost=cost,
-                latency_ms=safe_action.base_latency_ms * self.config.hardware.latency_scale,
-                safe=safe,
-            ))
-
-            # 12. Debug
-            if self.config.verbose:
-                zone = f" [CONVICTION ZONE, step={self.conviction.state.zone_steps}]" if self.conviction.state.in_zone else ""
-                print(f"  Step {step}: {safe_action.name} "
-                      f"(clarity={clarity_true:.2f}, score={score:.3f}) "
-                      f"→ obs={obs}, belief={self.belief.belief:.3f} "
-                      f"risk={self.belief.risk:.3f}{zone}")
-
-        # ── Décision finale avec abstention ──
-        n_steps_done = len(steps)
-        avg_clarity = clarity_sum / max(n_steps_done, 1)
-
-        # Abstain si: pas assez d'observations OU confiance trop basse
-        abstained = (
-            n_steps_done < self.config.min_observations or
-            self.belief.confidence < self.config.abstention_confidence
-        )
-
-        if abstained:
-            decision = -1  # -1 = abstention
-            correct = False
-        else:
-            decision = self.belief.decision
-            correct = (decision == true_class)
-
-        result = APCResult(
-            decision=decision,
-            correct=correct,
-            total_cost=total_cost,
-            total_latency_ms=total_latency,
-            total_energy_mJ=total_energy,
-            peak_memory_MB=peak_memory,
-            total_flops_M=total_flops,
-            n_steps=n_steps_done,
-            n_emergency=n_emergency,
-            steps=steps,
-            final_belief=self.belief.belief,
-            final_risk=self.belief.risk,
-            abstained=abstained,
-            degraded=degraded,
-            cost_budget_exceeded=cost_budget_exceeded,
-            avg_clarity=avg_clarity,
-        )
-
-        self._run_history.append(result)
-        return result
+            self.observe(
+                action, obs,
+                clarity=clarity_true if oracle_clarity else None,
+                correct=(obs == true_class),
+            )
+        return self.finish(true_class)
 
     def batch_run(
         self,
@@ -457,7 +538,6 @@ class APCController:
         all_results = []
         for true_class, difficulty, clarity_fn in tasks:
             for _ in range(n_trials):
-                self.belief.reset()
                 result = self.run(true_class, clarity_fn)
                 all_results.append(result)
         return all_results
