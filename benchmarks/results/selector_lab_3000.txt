@@ -1,0 +1,12 @@
+n=3000  test=1500  Fixed 640: mAP 34.87 @ 84.4 ms
+
+config                                        ms to reach F640 mAP  mAP @ 60 ms  mAP @ 100 ms
+r0=160  A  det-stats, ridge deg2                      101.3 ms ( -20%)       27.85         34.77
+r0=160  B  + image stats, ridge deg2                  102.7 ms ( -22%)       27.74         34.67
+r0=160  C  det+image, GBM                               nan ms (+nan%)       26.55         33.70
+r0=224  A  det-stats, ridge deg2                      115.2 ms ( -37%)       27.40         33.81
+r0=224  B  + image stats, ridge deg2                  117.3 ms ( -39%)       26.99         33.66
+r0=224  C  det+image, GBM                             121.6 ms ( -44%)       27.24         33.76
+r0=320  A  det-stats, ridge deg2                      119.9 ms ( -42%)       29.38         33.86
+r0=320  B  + image stats, ridge deg2                  124.2 ms ( -47%)       29.28         33.66
+r0=320  C  det+image, GBM                             123.9 ms ( -47%)       28.91         33.43

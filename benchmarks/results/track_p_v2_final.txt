@@ -1,0 +1,189 @@
+images=3000 cal=1500 test=1500  cost model: per-resolution mean of an idle-machine run
+
+===== 'person' present?  prevalence(test)=0.54  tau=1.0 carry=0.0  (n_test=1500) =====
+policy                                  acc %  ms/img  steps
+Fixed 160                                84.7    22.4   1.00
+Fixed 224                                88.9    29.9   1.00
+Fixed 320                                91.7    40.4   1.00
+Fixed 416                                93.0    53.0   1.00
+Fixed 512                                93.9    65.2   1.00
+Fixed 640                                94.7    84.4   1.00
+Fixed 800                                95.1   125.4   1.00
+Fixed 1024                               94.3   182.8   1.00
+
+ACIES v1 thr=0.9                         89.2    67.2    nan
+ACIES v1 thr=0.95                        89.2    69.3    nan
+ACIES v1 thr=0.99                        89.9    95.8    nan
+
+Cascade 160->640 hi=0.4 lo=0.2           86.8    28.5    nan
+Cascade 160->640 hi=0.5 lo=0.2           86.8    32.0    nan
+Cascade 160->640 hi=0.4 lo=0.12          89.2    32.0    nan
+Cascade 160->640 hi=0.4 lo=0.08          89.8    34.1    nan
+Cascade 224->640 hi=0.4 lo=0.2           90.3    34.7    nan
+Cascade 224->800 hi=0.4 lo=0.2           90.3    37.0    nan
+Cascade 224->640 hi=0.4 lo=0.12          91.9    37.3    nan
+Cascade 224->640 hi=0.4 lo=0.08          92.4    39.4    nan
+Cascade 224->640 hi=0.5 lo=0.08          92.4    41.8    nan
+Cascade 224->640 hi=0.4 lo=0.05          93.1    41.9    nan
+Cascade 224->640 hi=0.5 lo=0.05          93.1    44.2    nan
+Cascade 224->800 hi=0.4 lo=0.05          93.0    47.7    nan
+Cascade 224->640 hi=0.4 lo=0.02          94.0    47.5    nan
+Cascade 224->640 hi=0.5 lo=0.02          94.0    49.9    nan
+Cascade 320->640 hi=0.4 lo=0.02          94.7    56.0    nan
+Cascade 224->800 hi=0.4 lo=0.02          94.2    56.1    nan
+Cascade 224->800 hi=0.7 lo=0.02          94.1    70.2    nan
+Cascade 224->800 hi=0.8 lo=0.02          94.1    81.5    nan
+
+ACIES v2 lambda=20                       54.3     0.0    nan
+ACIES v2 lambda=40                       54.3     0.0    nan
+ACIES v2 lambda=80                       87.7    24.0   1.05
+ACIES v2 lambda=150                      90.2    31.9   1.29
+ACIES v2 lambda=300                      91.1    36.1   1.38
+ACIES v2 lambda=600                      93.3    46.3   1.36
+ACIES v2 lambda=1200                     93.7    54.1   1.49
+ACIES v2 lambda=2500                     93.8    59.3   1.46
+ACIES v2 lambda=5000                     94.7   125.7   1.52
+
+
+===== 'car' present?  prevalence(test)=0.11  tau=1.0 carry=0.25  (n_test=1500) =====
+policy                                  acc %  ms/img  steps
+Fixed 160                                91.6    22.4   1.00
+Fixed 224                                93.3    29.9   1.00
+Fixed 320                                94.5    40.4   1.00
+Fixed 416                                95.3    53.0   1.00
+Fixed 512                                96.0    65.2   1.00
+Fixed 640                                96.7    84.4   1.00
+Fixed 800                                96.1   125.4   1.00
+Fixed 1024                               96.3   182.8   1.00
+
+ACIES v1 thr=0.9                         91.6    22.4    nan
+ACIES v1 thr=0.95                        92.1    66.7    nan
+ACIES v1 thr=0.99                        92.0    69.8    nan
+
+Cascade 160->640 hi=0.4 lo=0.2           92.5    24.2    nan
+Cascade 160->640 hi=0.5 lo=0.2           92.7    24.7    nan
+Cascade 160->640 hi=0.4 lo=0.12          93.3    25.6    nan
+Cascade 160->640 hi=0.5 lo=0.12          93.4    26.1    nan
+Cascade 160->640 hi=0.4 lo=0.08          93.7    26.7    nan
+Cascade 160->640 hi=0.5 lo=0.08          93.8    27.2    nan
+Cascade 160->640 hi=0.4 lo=0.05          94.3    28.3    nan
+Cascade 160->640 hi=0.5 lo=0.05          94.4    28.8    nan
+Cascade 160->640 hi=0.7 lo=0.05          94.3    29.9    nan
+Cascade 160->640 hi=0.4 lo=0.02          95.2    32.7    nan
+Cascade 160->640 hi=0.5 lo=0.02          95.3    33.2    nan
+Cascade 160->640 hi=0.7 lo=0.02          95.3    34.3    nan
+Cascade 224->800 hi=0.4 lo=0.12          94.1    35.5    nan
+Cascade 160->640 hi=0.7 lo=0.01          95.7    37.7    nan
+Cascade 224->800 hi=0.4 lo=0.08          94.7    37.1    nan
+Cascade 224->800 hi=0.4 lo=0.05          95.1    39.4    nan
+Cascade 224->640 hi=0.4 lo=0.02          95.7    40.4    nan
+Cascade 224->640 hi=0.5 lo=0.02          95.9    41.0    nan
+Cascade 224->640 hi=0.4 lo=0.01          96.1    43.3    nan
+Cascade 224->640 hi=0.5 lo=0.01          96.3    43.9    nan
+Cascade 224->800 hi=0.4 lo=0.02          95.5    45.5    nan
+Cascade 320->640 hi=0.4 lo=0.05          96.4    46.8    nan
+Cascade 320->640 hi=0.4 lo=0.02          96.5    50.1    nan
+
+ACIES v2 lambda=20                       89.3     0.0    nan
+ACIES v2 lambda=40                       89.3     0.0    nan
+ACIES v2 lambda=80                       89.3     0.0    nan
+ACIES v2 lambda=150                      89.3     0.0    nan
+ACIES v2 lambda=300                      89.3     0.0    nan
+ACIES v2 lambda=600                      94.0    31.4   1.25
+ACIES v2 lambda=1200                     95.0    42.0   1.26
+ACIES v2 lambda=2500                     96.2    60.7   1.33
+ACIES v2 lambda=5000                     96.4    65.0   1.33
+
+
+===== 'chair' present?  prevalence(test)=0.11  tau=1.0 carry=0.25  (n_test=1500) =====
+policy                                  acc %  ms/img  steps
+Fixed 160                                89.9    22.4   1.00
+Fixed 224                                91.6    29.9   1.00
+Fixed 320                                93.6    40.4   1.00
+Fixed 416                                93.3    53.0   1.00
+Fixed 512                                94.7    65.2   1.00
+Fixed 640                                94.3    84.4   1.00
+Fixed 800                                94.4   125.4   1.00
+Fixed 1024                               93.9   182.8   1.00
+
+ACIES v1 thr=0.9                         89.9    22.4    nan
+ACIES v1 thr=0.95                        92.4    71.3    nan
+ACIES v1 thr=0.99                        90.6    73.8    nan
+
+Cascade 160->640 hi=0.4 lo=0.2           90.7    24.5    nan
+Cascade 160->640 hi=0.4 lo=0.12          91.5    26.3    nan
+Cascade 160->640 hi=0.4 lo=0.08          92.3    28.4    nan
+Cascade 160->640 hi=0.4 lo=0.05          93.1    30.9    nan
+Cascade 224->640 hi=0.4 lo=0.12          93.3    35.0    nan
+Cascade 160->640 hi=0.4 lo=0.02          93.5    35.5    nan
+Cascade 224->640 hi=0.4 lo=0.08          93.6    36.9    nan
+Cascade 224->640 hi=0.4 lo=0.05          94.1    39.1    nan
+Cascade 224->800 hi=0.4 lo=0.05          94.5    43.6    nan
+Cascade 224->800 hi=0.6 lo=0.05          94.5    44.6    nan
+Cascade 320->640 hi=0.4 lo=0.12          94.4    46.4    nan
+Cascade 320->640 hi=0.5 lo=0.12          94.4    47.2    nan
+
+ACIES v2 lambda=20                       88.5     0.0    nan
+ACIES v2 lambda=40                       88.5     0.0    nan
+ACIES v2 lambda=80                       88.5     0.0    nan
+ACIES v2 lambda=150                      88.5     0.0    nan
+ACIES v2 lambda=300                      88.5     0.0    nan
+ACIES v2 lambda=600                      93.7    34.3   1.32
+ACIES v2 lambda=1200                     94.3    46.8   1.35
+ACIES v2 lambda=2500                     94.8    67.6   1.42
+ACIES v2 lambda=5000                     94.8    67.6   1.42
+
+
+===== 'bottle' present?  prevalence(test)=0.08  tau=1.0 carry=0.0  (n_test=1500) =====
+policy                                  acc %  ms/img  steps
+Fixed 160                                92.7    22.4   1.00
+Fixed 224                                93.7    29.9   1.00
+Fixed 320                                94.8    40.4   1.00
+Fixed 416                                95.4    53.0   1.00
+Fixed 512                                95.5    65.2   1.00
+Fixed 640                                95.6    84.4   1.00
+Fixed 800                                96.3   125.4   1.00
+Fixed 1024                               95.5   182.8   1.00
+
+ACIES v1 thr=0.9                         92.7    22.4    nan
+ACIES v1 thr=0.95                        93.9    77.9    nan
+ACIES v1 thr=0.99                        93.1    78.4    nan
+
+Cascade 160->640 hi=0.4 lo=0.2           92.9    23.0    nan
+Cascade 160->640 hi=0.5 lo=0.2           93.1    23.2    nan
+Cascade 160->640 hi=0.4 lo=0.12          93.2    23.5    nan
+Cascade 160->640 hi=0.5 lo=0.12          93.3    23.7    nan
+Cascade 160->640 hi=0.4 lo=0.05          93.4    25.2    nan
+Cascade 160->640 hi=0.5 lo=0.05          93.5    25.4    nan
+Cascade 160->640 hi=0.4 lo=0.02          93.9    29.1    nan
+Cascade 160->640 hi=0.5 lo=0.02          94.1    29.3    nan
+Cascade 160->640 hi=0.4 lo=0.01          94.3    31.9    nan
+Cascade 160->640 hi=0.5 lo=0.01          94.4    32.1    nan
+Cascade 224->640 hi=0.4 lo=0.05          94.9    35.3    nan
+Cascade 224->640 hi=0.7 lo=0.05          94.9    35.8    nan
+Cascade 224->800 hi=0.4 lo=0.05          95.1    37.9    nan
+Cascade 224->640 hi=0.4 lo=0.02          95.2    39.2    nan
+Cascade 224->640 hi=0.7 lo=0.02          95.1    39.7    nan
+Cascade 224->640 hi=0.4 lo=0.01          95.3    42.5    nan
+Cascade 224->640 hi=0.7 lo=0.01          95.2    43.0    nan
+Cascade 320->640 hi=0.4 lo=0.05          95.3    46.3    nan
+Cascade 320->640 hi=0.4 lo=0.02          95.5    50.5    nan
+Cascade 320->640 hi=0.4 lo=0.01          95.5    53.5    nan
+
+ACIES v2 lambda=20                       92.0     0.0    nan
+ACIES v2 lambda=40                       92.0     0.0    nan
+ACIES v2 lambda=80                       92.0     0.0    nan
+ACIES v2 lambda=150                      92.0     0.0    nan
+ACIES v2 lambda=300                      92.0     0.0    nan
+ACIES v2 lambda=600                      92.0     0.0    nan
+ACIES v2 lambda=1200                     94.9    42.6   1.25
+ACIES v2 lambda=2500                     95.7    60.8   1.32
+ACIES v2 lambda=5000                     95.9    85.2   1.37
+
+
+===== cost to reach the accuracy of Fixed 640 (lower is better) =====
+class       Fixed 640   ACIES v1   Cascade*   ACIES v2   (cascade tuned on cal)
+person     84.4 ms/95%    n/a        n/a       125.7 ms
+car        84.4 ms/97%    n/a        n/a        n/a    
+chair      84.4 ms/94%    n/a        41.3 ms    45.6 ms
+bottle     84.4 ms/96%    n/a        n/a        59.1 ms
