@@ -1,0 +1,19 @@
+costs (single session, ms): full-frame {160: 12.8, 224: 31.0, 320: 34.1, 416: 51.9, 512: 55.2, 640: 96.0, 800: 133.9, 1024: 161.9} | crops {224: 26.1, 320: 31.7}
+32 trials (8 classes x 4 random splits), delta=0.1, mode=conditional
+
+Fixed 640 reference: 96.0 ms | cost = mean latency on TEST | violation = significantly above the tolerance (exact binomial test, 5%)
+
+===== miss rate <= 10% of what the 640 px system flags AND false alarms <= 3% of the rest   (delta = 10%) =====
+method                  cost ms  saving   miss false-al. disagree   violations  certified acc vs GT
+Fixed                      96.0     -0%   0.0%     0.00%    0.00%   0.0% ( 0/32)      100%     96.28%
+Cascade                    66.4     31%   2.9%     0.34%    0.69%   0.0% ( 0/32)       66%     96.14%
+ACIES v2                   85.7     11%   1.4%     0.25%    0.44%   0.0% ( 0/32)       38%     96.22%
+ACIES v2 (asym)            87.9      8%   2.0%     0.37%    0.57%   0.0% ( 0/32)       56%     96.23%
+
+===== miss rate <= 5% of what the 640 px system flags AND false alarms <= 2% of the rest   (delta = 10%) =====
+method                  cost ms  saving   miss false-al. disagree   violations  certified acc vs GT
+Fixed                      96.0     -0%   0.0%     0.00%    0.00%   0.0% ( 0/32)       69%     96.28%
+Cascade                    84.7     12%   0.7%     0.10%    0.25%   0.0% ( 0/32)       34%     96.25%
+ACIES v2                   94.6      1%   0.2%     0.10%    0.12%   0.0% ( 0/32)       19%     96.27%
+ACIES v2 (asym)            91.8      4%   0.2%     0.12%    0.16%   0.0% ( 0/32)       22%     96.29%
+

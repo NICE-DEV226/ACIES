@@ -177,6 +177,75 @@ class TestChannelController:
         with pytest.raises(ValueError):
             lr.feedback(0, 2, 0)
 
+    def test_first_action_is_forced_and_later_actions_move_upward(self):
+        acts = make_actions([1, 3, 10])
+        lr = self._learner()
+        ctl = ChannelController(acts, lr, ChannelConfig(error_cost=5000, first_action=1, hardware=HW))
+        for _ in range(100):
+            ctl.begin()
+            seen = []
+            while (a := ctl.next_action()) is not None:
+                seen.append(a.id)
+                ctl.observe(a, random.randint(0, 3))
+            ctl.finish()
+            assert seen[0] == 1 and 0 not in seen          # forced start; nothing below it afterwards
+            assert seen == sorted(set(seen))
+        with pytest.raises(ValueError):
+            ChannelController(acts, lr, ChannelConfig(first_action=3))
+
+    def test_external_belief_overrides_the_update_and_planning_continues(self):
+        acts = make_actions([1, 3, 10])
+        lr = self._learner()
+        ctl = ChannelController(acts, lr, ChannelConfig(error_cost=300, first_action=0, hardware=HW))
+        ctl.begin()
+        a = ctl.next_action()
+        step = ctl.observe(a, 0, belief=0.999)
+        assert step.belief_after == pytest.approx(0.999)
+        assert ctl.next_action() is None                    # certain: nothing left worth its cost
+        ctl.finish()
+        ctl.begin()
+        a = ctl.next_action()
+        ctl.observe(a, 0, belief=0.5)                       # maximally unsure: escalates
+        assert ctl.next_action() is not None
+        with pytest.raises(ValueError):
+            ctl.observe(ctl._task["pending"] and acts[1], 0, belief=1.5)
+
+    def test_asymmetric_costs_move_the_decision_threshold(self):
+        """A miss costing rho times a false alarm: decide 'positive' from belief 1/(1+rho) upward."""
+        acts = make_actions([1, 3, 10])
+        lr = self._learner()
+        for rho, belief, expected in ((1.0, 0.4, 0), (1.0, 0.6, 1), (5.0, 0.2, 1), (5.0, 0.1, 0), (0.25, 0.7, 0)):
+            ctl = ChannelController(acts, lr, ChannelConfig(error_cost=1.0, miss_cost=rho, first_action=0, hardware=HW))
+            ctl.begin()
+            a = ctl.next_action()
+            ctl.observe(a, 0, belief=belief)
+            assert ctl.next_action() is None            # error_cost = 1: nothing is worth running
+            assert ctl.finish().decision == expected, (rho, belief)
+
+    def test_higher_miss_cost_buys_more_perception_near_the_positive_side(self):
+        acts = make_actions([1, 3, 10])
+        lr = self._learner()
+        cost = {}
+        for rho in (1.0, 6.0):
+            ctl = ChannelController(acts, lr, ChannelConfig(error_cost=40, miss_cost=rho, first_action=0, hardware=HW))
+            c = 0.0
+            for b1 in (0.02, 0.03, 0.04):
+                ctl.begin()
+                a = ctl.next_action()
+                ctl.observe(a, 0, belief=b1)
+                while (a := ctl.next_action()) is not None:
+                    ctl.observe(a, random.randint(0, 3))
+                c += ctl.finish().total_cost
+            cost[rho] = c
+        assert cost[6.0] > cost[1.0]        # a 2-4 % chance of a costly miss is worth another look; of a plain error, not
+
+    def test_miss_cost_validation_and_default_is_symmetric(self):
+        acts = make_actions([1, 3, 10])
+        lr = self._learner()
+        with pytest.raises(ValueError):
+            ChannelController(acts, lr, ChannelConfig(miss_cost=0.0))
+        assert ChannelConfig().miss_cost == 1.0
+
     def test_replans_when_the_learner_changes(self):
         acts = make_actions([1, 3, 10])
         lr = self._learner()

@@ -2,8 +2,8 @@ FROM python:3.12-slim AS python-base
 WORKDIR /app
 COPY acies/ ./acies/
 COPY examples/ ./examples/
-COPY test_apc.py test_control.py test_channel.py .
-RUN pip install --no-cache-dir pytest && python3 -m pytest -q test_apc.py test_control.py test_channel.py
+COPY test_apc.py test_control.py test_channel.py test_risk.py test_cascade.py .
+RUN pip install --no-cache-dir pytest && python3 -m pytest -q test_apc.py test_control.py test_channel.py test_risk.py test_cascade.py
 
 FROM golang:1.22-bookworm AS go-build
 WORKDIR /src

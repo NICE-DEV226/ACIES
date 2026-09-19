@@ -56,6 +56,8 @@ from .actions import Action, HardwareProfile
 @dataclass
 class ChannelConfig:
     error_cost: float = 300.0      # cost units per unit of error probability (accuracy/cost knob)
+    miss_cost: float = 1.0         # rho: a missed positive costs rho times a false alarm. Decide 1 when
+                                   # b >= 1/(1+rho). rho > 1 for alerting, where missing an event is worse
     prior: Optional[float] = None  # P(Y=1); None = class frequency seen by the learner
     tau: float = 1.0               # weight of NEW evidence in (0, 1]
     carry: float = 1.0             # share of previous evidence kept, in [0, 1]. 1 = naive Bayes
@@ -66,6 +68,8 @@ class ChannelConfig:
     abstention_confidence: float = 0.0  # decide -1 (abstain) when confidence is below this
     hardware: HardwareProfile = field(default_factory=HardwareProfile.default)
     min_belief: float = 1e-4
+    first_action: Optional[int] = None  # index of an action that must run first (others may need
+                                   # its output, e.g. a region-of-interest zoom needs a box)
     planning: bool = True          # plan the whole escalation (DP) instead of greedy VOI/cost
     horizon: int = 4               # max number of observations the plan looks ahead
     grid: int = 201                # belief discretisation of the plan
@@ -158,7 +162,7 @@ class _Plan:
         self.nb = [[[ctl._posterior(b, a, o) for o in range(K)] for b in self.grid] for a in range(n)]
         self.pred = [[[b * ctl.learner.likelihood(a, 1)[o] + (1 - b) * ctl.learner.likelihood(a, 0)[o]
                        for o in range(K)] for b in self.grid] for a in range(n)]
-        stop = [lam * min(b, 1.0 - b) for b in self.grid]
+        stop = [lam * ctl._risk(b) for b in self.grid]
         # V[t][j] : list over grid; layer H is forced-stop
         self.V = [[list(stop) for _ in range(n + 1)] for _ in range(H + 1)]
         for t in range(H - 1, -1, -1):
@@ -193,7 +197,7 @@ class _Plan:
         """(index, voi) of the best next action from state (b, t, j), or (None, 0) to stop."""
         if t >= self.H or j >= self.n:
             return None, 0.0
-        stop = ctl.config.error_cost * min(b, 1.0 - b)
+        stop = ctl.config.error_cost * ctl._risk(b)
         best_q, best_a = stop, None
         nxt_layer = self.V[t + 1]
         for a in range(j, self.n):
@@ -250,6 +254,10 @@ class ChannelController:
             raise ValueError("tau must be in (0, 1]")
         if not 0.0 <= self.config.carry <= 1.0:
             raise ValueError("carry must be in [0, 1]")
+        if self.config.miss_cost <= 0.0:
+            raise ValueError("miss_cost must be > 0")
+        if self.config.first_action is not None and not 0 <= self.config.first_action < len(self.actions):
+            raise ValueError("first_action must index an action")
         self._task = None
 
     @property
@@ -257,6 +265,10 @@ class ChannelController:
         return self.config.prior if self.config.prior is not None else self.learner.prior()
 
     # ------------------------------------------------------------------ maths
+    def _risk(self, b: float) -> float:
+        """Expected loss of the best decision at belief b (false alarm costs 1, a miss costs rho)."""
+        return min(self.config.miss_cost * b, 1.0 - b)
+
     def _cost(self, a: Action) -> float:
         return a.cost(self.config.hardware)
 
@@ -286,13 +298,13 @@ class ChannelController:
             if p_o <= 0.0:
                 continue
             b2 = self._posterior(belief, action_idx, o)
-            expected += p_o * min(b2, 1.0 - b2)
-        return min(belief, 1.0 - belief) - expected
+            expected += p_o * self._risk(b2)
+        return self._risk(belief) - expected
 
     # ------------------------------------------------------------------ step API
     def _get_plan(self) -> "_Plan":
         key = (self.learner.version, self.config.error_cost, self.config.tau, self.config.carry,
-               self.config.horizon, self.config.grid, self.prior)
+               self.config.horizon, self.config.grid, self.prior, self.config.miss_cost)
         if self._plan is None or self._plan_key != key:
             self._plan, self._plan_key = _Plan(self), key
         return self._plan
@@ -313,6 +325,10 @@ class ChannelController:
         if t["pending"] is not None:
             raise RuntimeError("observe() must be called for the pending action first")
         b = t["belief"]
+        fa = self.config.first_action
+        if fa is not None and not t["steps"] and self.config.max_steps > 0:
+            t["pending"] = (fa, 0.0)
+            return self.actions[fa]
         if (len(t["steps"]) >= self.config.max_steps
                 or max(b, 1.0 - b) >= self.config.confidence_threshold):
             t["done"] = True
@@ -342,7 +358,7 @@ class ChannelController:
         t["pending"] = (best, best_voi)
         return self.actions[best]
 
-    def observe(self, action: Action, outcome: int) -> ChannelStep:
+    def observe(self, action: Action, outcome: int, belief: Optional[float] = None) -> ChannelStep:
         t = self._t()
         if t["pending"] is None or self.actions[t["pending"][0]].id != action.id:
             raise RuntimeError("observe() must follow next_action() with the same action")
@@ -351,7 +367,15 @@ class ChannelController:
         idx, voi = t["pending"]
         t["pending"] = None
         before = t["belief"]
-        t["belief"] = self._posterior(before, idx, outcome)
+        if belief is not None:
+            # posterior from an external calibrated model that already used this outcome (and any
+            # context features); it replaces the tabular update. Planning continues from it.
+            if not 0.0 < belief < 1.0:
+                raise ValueError("belief must be in (0, 1)")
+            m = self.config.min_belief
+            t["belief"] = min(max(belief, m), 1.0 - m)
+        else:
+            t["belief"] = self._posterior(before, idx, outcome)
         t["used"].add(idx)
         t["j"] = max(t["j"], idx + 1)
         cost = self._cost(action)
@@ -369,7 +393,7 @@ class ChannelController:
         b = t["belief"]
         conf = max(b, 1.0 - b)
         abstained = conf < self.config.abstention_confidence
-        decision = -1 if abstained else int(b >= 0.5)
+        decision = -1 if abstained else int(b >= 1.0 / (1.0 + self.config.miss_cost))
         correct = None if true_class is None else (False if abstained else decision == true_class)
         res = ChannelResult(decision, conf, b, t["cost"], len(t["steps"]), abstained, t["steps"], correct)
         self._task = None
