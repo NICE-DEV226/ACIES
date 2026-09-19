@@ -28,7 +28,7 @@ acies-cli run [options]
 | `--threshold` | 0.95 | Confidence threshold |
 | `--max-steps` | 6 | Maximum perception steps |
 | `--difficulty` | 0.0 | Task difficulty |
-| `--verbose` | false | Show step-by-step output |
+| `--verbose` | false | Show step-by-step output. **Needs an explicit value: `--verbose=true`** (a bare `--verbose` is ignored and swallows the next flag — [#12](https://github.com/NICE-DEV226/ACIES/issues/12)) |
 
 **Examples:**
 
@@ -39,8 +39,8 @@ acies-cli run
 # Jetson profile with high confidence
 acies-cli run --hardware jetson --threshold 0.92
 
-# Verbose mode
-acies-cli run --verbose
+# Verbose mode (the value is required, see the flag table)
+acies-cli run --verbose=true
 
 # Hard task
 acies-cli run --difficulty 0.7 --max-steps 8
@@ -53,7 +53,7 @@ Decision: 1 (true: 1) | CORRECT
 Cost: 147.1 | Steps: 2 | Final belief: 0.983 | Risk: 0.166
 ```
 
-With `--verbose`:
+With `--verbose=true`:
 
 ```
 Profile: Jetson Orin Nano

@@ -49,10 +49,10 @@ It is a small, tested library plus an honest benchmark. It is **not** a breakthr
 
 | Where | Problem | Difficulty |
 |---|---|---|
-| `acies/change_point.py` | BOCPD never fires: with a constant hazard, `P(r_t = 0)` equals the hazard rate identically | medium — replace with run-length MAP / CUSUM |
-| `acies/multiclass.py` | Pseudo-count belief saturates at the per-observation clarity; not a Bayesian posterior | medium |
-| `cpp/` | No bounds check on action ids (heap overflow), exception can cross the C ABI on invalid sizes, `ClarityLearner` owns a raw pointer with no copy constructor (double free); the wrapper is also *slower* than pure Python and unused | good first issue |
-| `main.go` | Flag parser swallows the argument after a boolean flag (`--verbose --hardware jetson`) | good first issue |
+| `acies/change_point.py` ([#15](https://github.com/NICE-DEV226/ACIES/issues/15)) | BOCPD never fires: with a constant hazard, `P(r_t = 0)` equals the hazard rate identically | medium — replace with run-length MAP / CUSUM |
+| `acies/multiclass.py` ([#16](https://github.com/NICE-DEV226/ACIES/issues/16)) | Pseudo-count belief saturates at the per-observation clarity; not a Bayesian posterior | medium |
+| `cpp/` ([#11](https://github.com/NICE-DEV226/ACIES/issues/11)) | No bounds check on action ids (heap overflow), exception can cross the C ABI on invalid sizes, `ClarityLearner` owns a raw pointer with no copy constructor (double free); the wrapper is also *slower* than pure Python and unused | good first issue |
+| `main.go` ([#12](https://github.com/NICE-DEV226/ACIES/issues/12)) | Boolean flags given alone do nothing (`--verbose`) and swallow the next flag (`--verbose --hardware jetson`) | good first issue |
 | `core.go` | The learner is recreated on every run, so the Go CLI is not the same algorithm as the Python controller | easy |
 | `test/stress_test_robust.py` | Needs an external model file (`/tmp/mnist_cnn.pth`) that is not in the repo | easy |
 
@@ -60,11 +60,11 @@ It is a small, tested library plus an honest benchmark. It is **not** a breakthr
 
 These are open questions, roughly ordered by how much they would change our conclusions. **Take one, or propose your own** (see the bottom).
 
-1. **Reproduce on your hardware/runtime** (GPU, TensorRT, OpenVINO, Jetson, RPi). *Success: a cost-vs-resolution curve and the certified-saving table from `certified_cascade_demo.py`, including the cases where it saves nothing.*
-2. **Close the headroom gap.** An oracle that knows every resolution's answer would save ~85 %; certified cascades reach 31–73 %. The missing piece is predicting *"will the cheap pass agree with the reference?"*. *Success: higher certified saving at the same ε, under the same protocol.*
-3. **More data-efficient certification.** The 45-positives wall makes rare events uncertifiable. Tighter bounds, sharing strength across classes, sequential/anytime-valid tests (e-values). *Success: certify a rare class with fewer calibration examples, with an empirical coverage check.*
-4. **Drift-aware guarantees.** Detect when exchangeability breaks and fall back to the reference; conformal methods under covariate shift.
-5. **Non-binary decisions**: counting, multi-class, detection-level guarantees.
+1. **Reproduce on your hardware/runtime** (GPU, TensorRT, OpenVINO, Jetson, RPi) — [#8](https://github.com/NICE-DEV226/ACIES/issues/8). *Success: a cost-vs-resolution curve and the certified-saving table from `certified_cascade_demo.py`, including the cases where it saves nothing.*
+2. **Close the headroom gap** — [#9](https://github.com/NICE-DEV226/ACIES/issues/9). An oracle that knows every resolution's answer would save ~85 %; certified cascades reach 31–73 %. The missing piece is predicting *"will the cheap pass agree with the reference?"*. *Success: higher certified saving at the same ε, under the same protocol.*
+3. **More data-efficient certification** — [#10](https://github.com/NICE-DEV226/ACIES/issues/10). The 45-positives wall makes rare events uncertifiable. Tighter bounds, sharing strength across classes, sequential/anytime-valid tests (e-values). *Success: certify a rare class with fewer calibration examples, with an empirical coverage check.*
+4. **Drift-aware guarantees** — [#14](https://github.com/NICE-DEV226/ACIES/issues/14). Detect when exchangeability breaks and fall back to the reference; conformal methods under covariate shift. Related: runtime monitoring and audit log, [#17](https://github.com/NICE-DEV226/ACIES/issues/17).
+5. **Non-binary decisions**: counting, multi-class, detection-level guarantees — [#13](https://github.com/NICE-DEV226/ACIES/issues/13).
 6. **Video**: temporal reuse combined with a certified guarantee.
 7. **Other detectors**: complete YOLO26 on COCO, RT-DETR/RF-DETR, YOLO27 when released.
 8. **Sector validation with real data and a frozen model.** If you work in one, tell us what the decision, the cost and the tolerable error actually are.
