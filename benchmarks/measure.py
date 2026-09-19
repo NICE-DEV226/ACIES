@@ -29,7 +29,10 @@ def main():
     ap.add_argument("--out", default=None)
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--threads", type=int, default=None)
+    ap.add_argument("--resolutions", type=int, nargs="+", default=RESOLUTIONS)
+    ap.add_argument("--max-det", type=int, default=300)
     a = ap.parse_args()
+    resolutions = list(a.resolutions)
 
     import torch
     from ultralytics import YOLO
@@ -41,7 +44,7 @@ def main():
     tag = os.path.splitext(os.path.basename(a.weights))[0]
     out = a.out or os.path.join(os.path.dirname(a.subset), f"measure_{tag}_{len(images)}.pkl")
 
-    state = {"weights": a.weights, "resolutions": RESOLUTIONS, "threads": torch.get_num_threads(),
+    state = {"weights": a.weights, "resolutions": resolutions, "threads": torch.get_num_threads(),
              "dets": {}, "ms": {}}
     if os.path.exists(out):
         state = pickle.load(open(out, "rb"))
@@ -49,7 +52,7 @@ def main():
 
     model = YOLO(a.weights)
     dummy = np.zeros((480, 640, 3), np.uint8)
-    for r in RESOLUTIONS:                       # warm-up (allocations, oneDNN kernels)
+    for r in resolutions:                       # warm-up (allocations, oneDNN kernels)
         for _ in range(3):
             model.predict(dummy, imgsz=r, verbose=False, device="cpu")
 
@@ -59,8 +62,8 @@ def main():
             continue
         img = cv2.imread(im["file"])
         ms = []
-        for r in RESOLUTIONS:
-            res = model.predict(img, imgsz=r, conf=0.001, iou=0.7, max_det=300,
+        for r in resolutions:
+            res = model.predict(img, imgsz=r, conf=0.001, iou=0.7, max_det=a.max_det,
                                 verbose=False, device="cpu")[0]
             b = res.boxes
             state["dets"][(im["id"], r)] = (
@@ -72,7 +75,7 @@ def main():
             pickle.dump(state, open(out, "wb"))
             done = len(state["ms"])
             print(f"{done}/{len(images)}  {time.time() - t0:.0f}s  "
-                  f"mean ms/res={[round(float(np.mean([v[i] for v in state['ms'].values()])), 1) for i in range(len(RESOLUTIONS))]}",
+                  f"mean ms/res={[round(float(np.mean([v[i] for v in state['ms'].values()])), 1) for i in range(len(resolutions))]}",
                   flush=True)
     pickle.dump(state, open(out, "wb"))
     print("saved", out)

@@ -1,0 +1,12 @@
+8 trials (4 classes x 2 random splits), delta=0.1, mode=disagree
+Reference = full decision at 1920 px: 569.4 ms | cost = mean latency on TEST | violation = significantly above the tolerance (exact binomial test, 5%)
+===== epsilon = 2%: at most 2% of inputs may differ from the 640 px decision   (delta = 10%) =====
+method                  cost ms  saving   miss false-al. disagree   violations  certified acc vs GT
+Fixed                     569.4      0%   0.0%     0.00%    0.00%   0.0% ( 0/8)      100%     60.09%
+Cascade                   427.2     25%   3.9%     0.27%    0.69%   0.0% ( 0/8)      100%     60.16%
+ACIES v2                  533.5      6%   0.7%     0.00%    0.22%   0.0% ( 0/8)       75%     60.19%
+===== epsilon = 3%: at most 3% of inputs may differ from the 640 px decision   (delta = 10%) =====
+method                  cost ms  saving   miss false-al. disagree   violations  certified acc vs GT
+Fixed                     569.4      0%   0.0%     0.00%    0.00%   0.0% ( 0/8)      100%     60.09%
+Cascade                   395.1     31%   6.4%     0.16%    0.88%   0.0% ( 0/8)      100%     59.78%
+ACIES v2                  446.0     22%   6.5%     0.00%    0.56%   0.0% ( 0/8)      100%     60.03%

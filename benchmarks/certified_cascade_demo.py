@@ -30,16 +30,23 @@ def main():
     ap.add_argument("--latency-json", required=True)
     ap.add_argument("--classes", default="person:0,car:2,chair:56,bottle:39,cup:41,dog:16,tv:62,bench:13")
     ap.add_argument("--reps", type=int, default=4)
-    ap.add_argument("--first-stages", type=int, nargs="+", default=[160, 224, 320, 416])
+    ap.add_argument("--first-stages", type=int, nargs="+", default=None,
+                    help="candidate first-stage resolutions (default: every resolution below the reference)")
+    ap.add_argument("--ref-res", type=int, default=None, help="reference resolution (default: the largest)")
     a = ap.parse_args()
 
     S = pickle.load(open(a.measure, "rb"))
     R = S["resolutions"]
     images = [im for im in json.load(open(a.subset))["images"] if im["id"] in S["ms"]]
-    lat = json.load(open(a.latency_json))["full"]
-    c1 = lat["640"]
+    lat_all = json.load(open(a.latency_json))
+    lat = lat_all["full"]
+    R_all = sorted(int(r) for r in lat)
+    ref_res = a.ref_res or max(R_all)
+    if a.first_stages is None:
+        a.first_stages = [r for r in R_all if r < ref_res]
+    c1 = lat[str(ref_res)]
     classes = {s.split(":")[0]: int(s.split(":")[1]) for s in a.classes.split(",")}
-    print(f"candidate first stages {a.first_stages} px -> reference 640 px ({c1:.1f} ms); delta = 10%\n")
+    print(f"candidate first stages {a.first_stages} px -> reference {ref_res} px ({c1:.1f} ms); delta = 10%\n")
     settings = [("disagree", dict(eps=0.02), "disagreement <= 2%"),
                 ("disagree", dict(eps=0.03), "disagreement <= 3%"),
                 ("conditional", dict(eps_miss=0.10, eps_fa=0.03), "misses <= 10% and false alarms <= 3%"),
@@ -49,7 +56,7 @@ def main():
         m = cl == cls
         return float(cf[m].max()) if m.any() else 0.0
     data = {name: ({r0: np.array([conf_of(im, r0, cls) for im in images]) for r0 in a.first_stages},
-                   np.array([int(conf_of(im, 640, cls) >= 0.25) for im in images])) for name, cls in classes.items()}
+                   np.array([int(conf_of(im, ref_res, cls) >= 0.25) for im in images])) for name, cls in classes.items()}
     for risk, kw, label in settings:
         rows = []
         for rep in range(a.reps):
@@ -78,7 +85,7 @@ def main():
                              float((d[pos] == 0).mean()) if pos.any() else 0.0, float((d[~pos] == 1).mean())))
         r = np.array(rows, float)
         print(f"{label:42s} certified {r[:, 0].mean()*100:4.0f}% | cost {r[:, 1].mean():5.1f} ms "
-              f"(saving {(1 - r[:, 1].mean() / c1) * 100:3.0f}% vs {c1:.0f}) | test disagreement {r[:, 3].mean()*100:4.2f}% "
+              f"(saving {(1 - r[:, 1].mean() / c1) * 100:3.0f}% vs {c1:.0f} ms) | test disagreement {r[:, 3].mean()*100:4.2f}% "
               f"miss {r[:, 4].mean()*100:4.1f}% FA {r[:, 5].mean()*100:4.2f}% | significant violations {int(r[:, 2].sum())}/{len(r)}")
 
 

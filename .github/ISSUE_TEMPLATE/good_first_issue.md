@@ -15,7 +15,7 @@ How does this help the project?
 **Steps to complete**
 1. [ ] Step one
 2. [ ] Step two
-3. [ ] Run tests: `python3 test_apc.py`
+3. [ ] Run tests: `python3 -m pytest -q test_apc.py test_control.py test_channel.py test_risk.py test_cascade.py`
 
 **Relevant files**
 - `acies/...`
@@ -23,4 +23,5 @@ How does this help the project?
 
 **Helpful resources**
 - [Contributing guide](docs/contributing.md)
+- [State of the project](https://github.com/NICE-DEV226/ACIES/blob/main/docs/STATUS.md)
 - [Architecture docs](docs/architecture.md)

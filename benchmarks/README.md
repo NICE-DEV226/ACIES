@@ -89,6 +89,43 @@ method. Certifying a 5 % miss rate needs >= 45 calibration positives with no mis
 - **Outcome quantisation must contain the reference's decision boundary** (a bin edge at 0.25); otherwise no
   channel can reproduce the reference and the planner cannot be certified at 1 %.
 
+## Result 5 — current model and runtime (YOLO26n, ONNX Runtime), high-resolution drone images — PARTIAL
+
+The COCO results above use **YOLOv8n in PyTorch** (2023 generation). YOLO26 (released 14 Jan 2026) is the current
+Ultralytics model; YOLO27 is announced but not released (no weights). Two facts matter for this project:
+
+- **Runtime changes the cost model.** In PyTorch eager mode the cost of YOLOv8n/YOLO26n varies little with resolution
+  (fixed overheads dominate; 1024 px costs 5-8x a 160 px pass). With ONNX Runtime the cost follows the pixels
+  (YOLO26n: 6.6 ms at 160 px, 61 ms at 640 px, 115 ms at 1024 px; 640 vs 320 px = 4.75x for 4x the pixels).
+  Savings measured under PyTorch costs therefore do not transfer to an optimised runtime.
+- YOLO26n is 5.5 GFLOPs vs 8.7 for YOLOv8n and has no NMS (output `(1, 300, 6)`); the "up to 43 % faster on CPU"
+  claim is for ONNX export and was **not** observed in PyTorch on this machine (i7-8565U).
+
+VisDrone2019-DET (val + test-dev, 1080x1920 drone images, many small objects), YOLO26n exported to ONNX, resolutions
+320-1920 px, reference = 1920 px (median cost 569 ms; 640 px = 47 ms; 320 px = 15 ms). **Only 1200 of 2158 images were
+measured** (the run was stopped because the host machine ran out of memory); the run is resumable
+(`benchmarks/measure.py` continues from its pickle). Costs are medians of a run that was perturbed by other activity
+(+/- 15 %). Classes: bicycle, bus, truck, motorcycle (balanced presence 34-59 %), plus person and car (present in 83 % and
+95 % of images, so uninformative).
+
+| Guarantee (delta = 10 %) | Certified splits | Saving | Violations |
+|---|:--:|:--:|:--:|
+| disagreement <= 2 % | 96 % | 31 % | 0 / 24 |
+| disagreement <= 3 % | 100 % | 38 % | 0 / 24 |
+| misses <= 10 %, false alarms <= 3 % | 62 % | 15 % | 0 / 24 |
+| misses <= 5 %, false alarms <= 2 % | 42 % | 7 % | 0 / 24 |
+
+Reading: (i) **the hypothesis that high-resolution images give larger savings was not supported** — the savings are lower
+than on COCO although cost follows the pixels, because small aerial targets are invisible at low resolution and the
+cheap pass rarely discriminates; (ii) no cheaper *fixed* resolution could be certified at 2-3 % disagreement, so the
+adaptive cascade is the only way to save anything there; (iii) with 4 classes x 2 splits the cascade saved 25 % / 31 %
+and the channel planner 6 % / 22 %; (iv) the COCO-trained detector is only ~60 % accurate against VisDrone ground truth
+for these classes, and the guarantee is *relative to the reference*, so a fine-tuned aerial model would be needed for a
+meaningful deployment.
+
+Commands: pass `--ref-res 640` to `certified_eval.py` / `certified_cascade_demo.py` for the COCO runs (the default reference
+is the largest resolution).
+
 ## Limits
 One detector (YOLOv8n), one machine (CPU), 1500 test images per class (accuracy s.e. ≈ 0.6 pt),
 binary presence decisions only, COCO val2017. YOLO26 and GPU/edge cost ratios are not measured.

@@ -190,8 +190,8 @@ against the real `BeliefState`; regression tests for the emergency-override defe
 ```bash
 python3 benchmarks/coco_subset.py --n 3000 --seed 0
 python3 benchmarks/measure.py --weights yolov8n.pt --subset ~/.cache/acies-bench/coco/subset_3000_0.json
-python3 benchmarks/certified_cascade_demo.py --measure <measure_*.pkl> --subset <subset_*.json> --latency-json benchmarks/results/latency_single_session.json
-python3 benchmarks/certified_eval.py --mode conditional ...   # all methods under the same certified protocol
+python3 benchmarks/certified_cascade_demo.py --measure <measure_*.pkl> --subset <subset_*.json> --latency-json benchmarks/results/latency_single_session.json --ref-res 640
+python3 benchmarks/certified_eval.py --mode conditional --ref-res 640 ...   # all methods under the same certified protocol
 ```
 
 Model weights are Ultralytics (AGPL-3.0) and are not distributed with this repository.
@@ -218,9 +218,15 @@ ACIES/
 └── Dockerfile  Makefile
 ```
 
+## Contributing — ideas wanted
+
+ACIES is small, honest and unfinished. **[`docs/STATUS.md`](docs/STATUS.md)** says exactly what is proven, what failed, what
+nobody has measured (GPU / TensorRT / OpenVINO, YOLO26 on COCO, video, drift, other sectors) and where we want your ideas.
+Open an issue with the **Research idea** template — a well-run experiment that fails is as welcome as one that works.
+
 ## Documentation
 
-[Architecture](docs/architecture.md) · [Configuration](docs/configuration.md) · [Python API](docs/python-api.md)
+[State of the project](docs/STATUS.md) · [Architecture](docs/architecture.md) · [Configuration](docs/configuration.md) · [Python API](docs/python-api.md)
 · [C++ API](docs/cpp-api.md) · [CLI](docs/cli-reference.md) · [Benchmarks](docs/benchmarks.md)
 · [Contributing](docs/contributing.md)
 

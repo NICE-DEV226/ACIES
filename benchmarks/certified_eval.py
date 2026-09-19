@@ -6,7 +6,7 @@ full-resolution system, for ACIES and for the existing alternatives, on real YOL
     python3 benchmarks/certified_eval.py --measure <pkl> --subset <json> --clean-ms-from <pkl>
 
 Decision (per class c): "is there a c in the image?" = top confidence of c >= 0.25.
-Reference system: the same decision at 640 px. No labels are used anywhere in the pipeline:
+Reference system: the same decision at the reference (largest) resolution. No labels are used anywhere in the pipeline:
 channels are learned from the reference's decisions and settings are certified against them.
 
 Each repetition draws a random split of the images into TRAIN / CERT / TEST (1000 each):
@@ -37,17 +37,27 @@ from acies.risk import certify, certify_pvalues, risk_pvalue  # noqa: E402
 # bin edge at 0.25 = the reference system's own decision boundary, otherwise no channel can reproduce it
 EDGES = np.array([0.02, 0.05, 0.10, 0.20, 0.25, 0.30, 0.50, 0.70, 0.85])
 K = len(EDGES) + 1
-LAMBDAS = [round(x) for x in np.geomspace(60, 30000, 14)]
 HW = HardwareProfile(name="ms", latency_weight=1.0, energy_weight=0.0, memory_weight=0.0)
 G = {}          # shared read-only data (inherited by workers through fork)
 
 
+def ref_index():
+    return G["R"].index(G["ref_res"])
+
+
+def lambdas(lo=0.6, hi=312.0, n=14):
+    """Error prices proportional to the reference cost (the original 60..30000 were for a 96 ms reference)."""
+    c = float(G["ms"][ref_index()])
+    return [round(x) for x in np.geomspace(lo * c, hi * c, n)]
+
+
 def load(measure, subset, clean, classes):
+    """clean: measurement pickle to take per-resolution mean costs from (None: use `measure` itself)."""
     S = pickle.load(open(measure, "rb"))
     sub = json.load(open(subset))
     R = S["resolutions"]
     images = [im for im in sub["images"] if im["id"] in S["ms"]]
-    ms = np.array(list(pickle.load(open(clean, "rb"))["ms"].values())).mean(0)
+    ms = np.array(list((pickle.load(open(clean, "rb")) if clean else S)["ms"].values())).mean(0)
     conf = {}
     for name, cls in classes.items():
         conf[name] = np.array([[float(S["dets"][(im["id"], r)][1][S["dets"][(im["id"], r)][2] == cls].max())
@@ -117,8 +127,10 @@ def fam_fixed(conf, ref, ms, R, train, name=None):
 
 def fam_cascade(conf, ref, ms, R, train, name=None):
     out = []
-    for r0, r1 in ((160, 640), (224, 640), (320, 640), (224, 800), (416, 640)):
-        k0, k1 = R.index(r0), R.index(r1)
+    k1 = ref_index()
+    for k0, r0 in enumerate(R):
+        if k0 >= k1:
+            continue
         for hi in (0.3, 0.4, 0.5, 0.6, 0.8):
             for lo in (0.005, 0.01, 0.02, 0.05, 0.1):
                 def f(idx, k0=k0, k1=k1, hi=hi, lo=lo):
@@ -126,7 +138,7 @@ def fam_cascade(conf, ref, ms, R, train, name=None):
                     esc = (c0 < hi) & (c0 >= lo)
                     d = np.where(c0 >= hi, 1, np.where(c0 < lo, 0, (conf[idx, k1] >= 0.25).astype(int)))
                     return d, ms[k0] + np.where(esc, ms[k1], 0.0)
-                out.append((f"Cascade {r0}->{r1} hi={hi} lo={lo}", f))
+                out.append((f"Cascade {r0}->{R[k1]} hi={hi} lo={lo}", f))
     return out
 
 
@@ -134,9 +146,10 @@ def fam_predictor(conf, ref, ms, R, train, name=None):
     """DRNet-style (no retraining): from a cheap pass, predict the smallest resolution whose decision
     matches the reference; ridge on the pass's confidence, chosen by a threshold tau."""
     out = []
-    cand = [R.index(r) for r in (224, 320, 416, 512, 640)]
-    for r0 in (160, 224):
-        k0 = R.index(r0)
+    k_ref = ref_index()
+    cand = [k for k in range(1, k_ref + 1)]
+    for k0 in (0, 1):
+        r0 = R[k0]
 
         def feats(idx, k0=k0):
             c = conf[idx, k0]
@@ -151,7 +164,7 @@ def fam_predictor(conf, ref, ms, R, train, name=None):
         for tau in (0.90, 0.95, 0.97, 0.98, 0.99, 0.995, 0.999):
             def f(idx, k0=k0, tau=tau, W=W, feats=feats):
                 F = feats(idx)
-                chosen = np.full(len(idx), R.index(640))
+                chosen = np.full(len(idx), k_ref)
                 for k in reversed(cand):                       # smallest resolution predicted good enough
                     ok = (F @ W[k]) >= tau
                     chosen = np.where(ok, k, chosen)
@@ -168,7 +181,7 @@ def fam_acies(conf, ref, ms, R, train, name=None):
     outc = np.digitize(conf, EDGES)
     learner = ChannelLearner(len(acts), K).fit(outc[train], ref[train])
     out = []
-    for lam in LAMBDAS:
+    for lam in lambdas():
         ctl = ChannelController(acts, learner, ChannelConfig(error_cost=lam, carry=0.0, hardware=HW, grid=101))
 
         def f(idx, ctl=ctl):
@@ -199,7 +212,7 @@ def fam_acies_asym(conf, ref, ms, R, train, name=None):
     learner = ChannelLearner(len(acts), K).fit(outc[train], ref[train])
     out = []
     for rho in (0.1, 0.25, 0.5, 1.0, 2.0, 4.0):
-        for lam in [round(x) for x in np.geomspace(100, 20000, 7)]:
+        for lam in lambdas(1.0, 208.0, 7):
             ctl = ChannelController(acts, learner, ChannelConfig(error_cost=lam, miss_cost=rho, carry=0.0,
                                                                  hardware=HW, grid=101))
 
@@ -365,7 +378,7 @@ def one_trial(args):
     perm = np.random.default_rng(1000 * rep + 7).permutation(n)
     third = n // 3
     train, cert, test = perm[:third], perm[third:2 * third], perm[2 * third:3 * third]
-    k640 = R.index(640)
+    k640 = ref_index()
     ref = (conf[:, k640] >= 0.25).astype(int)
     ref_acc = float(((conf[test, k640] >= .25) == Y[test]).mean())
     res = []
@@ -396,7 +409,7 @@ def one_trial(args):
                     cr = certify_pvalues(pv, delta=delta, order=order)
             best = cr.best(cost_tr) if cr is not None and cr.certified else None
             if best is None:                                  # nothing certified: fall back to the reference
-                cost, dis, miss, fa, label, viol = float(ms[k640]), 0.0, 0.0, 0.0, "Fixed 640 (fallback)", False
+                cost, dis, miss, fa, label, viol = float(ms[k640]), 0.0, 0.0, 0.0, "Reference (fallback)", False
                 acc = ref_acc
             else:
                 if best not in cache:
@@ -421,7 +434,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--measure", required=True)
     ap.add_argument("--subset", required=True)
-    ap.add_argument("--clean-ms-from", required=True)
+    ap.add_argument("--clean-ms-from", default=None)
+    ap.add_argument("--ref-res", type=int, default=None, help="reference resolution (default: the largest)")
     ap.add_argument("--classes", default="person:0,car:2,chair:56,bottle:39,cup:41,dog:16,tv:62,bench:13")
     ap.add_argument("--reps", type=int, default=6)
     ap.add_argument("--mode", choices=["disagree", "conditional"], default="disagree")
@@ -443,10 +457,10 @@ def main():
     if a.latency_json:
         lat = json.load(open(a.latency_json))
         ms = np.array([lat["full"][str(r)] for r in R])
-        ZOOM_MS.update({224: lat["224"]["mean_of_medians"], 320: lat["320"]["mean_of_medians"]})
-        print("costs (single session, ms): full-frame", {r: round(float(v), 1) for r, v in zip(R, ms)},
-              "| crops", {k: round(v, 1) for k, v in ZOOM_MS.items()}, flush=True)
-    G.update(R=R, ms=ms, conf=conf, Y=Y)
+        if "224" in lat:
+            ZOOM_MS.update({224: lat["224"]["mean_of_medians"], 320: lat["320"]["mean_of_medians"]})
+        print("costs (single session, ms): full-frame", {r: round(float(v), 1) for r, v in zip(R, ms)}, flush=True)
+    G.update(R=R, ms=ms, conf=conf, Y=Y, ref_res=a.ref_res or max(R))
     if a.zoom:
         G["zoom"] = load_zoom(a.zoom, a.subset, classes, ZOOM_MS)
     else:
@@ -471,8 +485,8 @@ def main():
     if a.out:
         json.dump(rows, open(a.out, "w"), default=lambda o: o.item() if hasattr(o, "item") else str(o))
 
-    ref_ms = ms[R.index(640)]
-    print(f"\nFixed 640 reference: {ref_ms:.1f} ms | cost = mean latency on TEST | violation = significantly above the "
+    ref_ms = ms[ref_index()]
+    print(f"\nReference = full decision at {G['ref_res']} px: {ref_ms:.1f} ms | cost = mean latency on TEST | violation = significantly above the "
           f"tolerance (exact binomial test, 5%)\n")
     for tgt in targets:
         if a.mode == "disagree":

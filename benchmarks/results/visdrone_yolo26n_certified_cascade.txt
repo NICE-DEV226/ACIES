@@ -1,0 +1,6 @@
+candidate first stages [320, 480, 640, 960, 1280] px -> reference 1920 px (569.4 ms); delta = 10%
+
+disagreement <= 2%                         certified   96% | cost 393.2 ms (saving  31% vs 569 ms) | test disagreement 0.62% miss  2.8% FA 1.17% | significant violations 0/24
+disagreement <= 3%                         certified  100% | cost 351.7 ms (saving  38% vs 569 ms) | test disagreement 1.09% miss  5.6% FA 1.27% | significant violations 0/24
+misses <= 10% and false alarms <= 3%       certified   62% | cost 485.8 ms (saving  15% vs 569 ms) | test disagreement 0.69% miss  1.2% FA 0.49% | significant violations 0/24
+misses <= 5% and false alarms <= 2%        certified   42% | cost 529.1 ms (saving   7% vs 569 ms) | test disagreement 0.21% miss  0.5% FA 0.07% | significant violations 0/24

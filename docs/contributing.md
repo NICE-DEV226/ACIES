@@ -1,96 +1,65 @@
 # Contributing to ACIES
 
-Thanks for your interest in contributing! ACIES is a project about **adaptive perception control** — making vision systems smarter by choosing *what* to perceive.
+Thanks for your interest. **Read [`docs/STATUS.md`](STATUS.md) first**: it says what is proven, what failed, what nobody
+has measured yet, and where we want your ideas.
 
-## Quick Start (5 minutes)
+ACIES makes a black-box perception model cheaper to run **with a finite-sample guarantee** against the full-cost system,
+and reports plainly when it cannot prove a saving. It is a small tested library plus an honest benchmark — not a
+finished product.
+
+## Quick start (5 minutes)
 
 ```bash
-# Clone
-git clone https://github.com/NICE-DEV226/ACIES.git
-cd ACIES
-
-# Run tests (no dependencies needed)
-python3 test_apc.py
-
-# Build Go CLI (optional)
-go build -o acies-cli .
-
-# Build C++ library (optional)
-cd cpp && make && cd ..
+git clone https://github.com/NICE-DEV226/ACIES.git && cd ACIES
+pip install -e ".[dev]"
+python3 -m pytest -q test_apc.py test_control.py test_channel.py test_risk.py test_cascade.py   # 86 tests
 ```
 
-## Ways to Contribute
+Optional: `go build -o acies-cli .` (Go simulator CLI), `cd cpp && make` (C++ primitives; see known defects in STATUS.md).
+Real benchmarks need Ultralytics and a dataset subset: see [`benchmarks/README.md`](../benchmarks/README.md).
 
-### 🟢 Good First Issues (beginners)
+## Ways to contribute
 
-Look for issues labeled [`good first issue`](https://github.com/NICE-DEV226/ACIES/labels/good%20first%20issue). These are well-scoped tasks with clear instructions.
+- **Ideas and experiments** — the most valuable contribution. Pick one of the "Ideas wanted" in [STATUS.md](STATUS.md) or
+  open an issue with the **Research idea** template. A well-run experiment that fails is as welcome as one that works.
+- **Reproduce on your hardware or runtime** (GPU, TensorRT, OpenVINO, Jetson, Raspberry Pi) — including the cases where
+  ACIES saves nothing.
+- **Fix known defects** (table in STATUS.md): C++ memory safety, BOCPD, multi-class belief, Go flag parser.
+- **Good first issues**: tests for a module, docs, the Go/C++ defects above, a wrapper for a detector API.
 
-Examples:
-- Add a new hardware profile
-- Improve documentation
-- Add unit tests for a specific module
-- Fix a typo in docs
-
-### 🟡 Intermediate
-
-- Add a new perception action (e.g., brightness adjustment, blur)
-- Implement a new clarity estimation method
-- Add logging/metrics to the controller
-- Improve the Go CLI (new flags, output formats)
-
-### 🔴 Advanced
-
-- Multi-class extension (currently binary only)
-- Neural clarity estimator (learn clarity from data)
-- Hardware-in-the-loop integration
-- ONNX export of the decision logic
-
-## Code Structure
+## Code structure
 
 ```
-ACIES/
-├── acies/                  # Python package (8 modules)
-│   ├── controller.py       # Main APC loop — START HERE
-│   ├── belief.py           # Bayesian belief tracker
-│   ├── clarity_learner.py  # Thompson Sampling
-│   ├── safety.py           # Risk guarantees
-│   ├── conviction.py       # Anti-oscillation
-│   ├── change_point.py     # BOCPD shift detection
-│   ├── actions.py          # Action space & HW profiles
-│   └── accelerator.py      # C++ ctypes wrapper
-│
-├── cpp/                    # C++ core library
-├── core.go                 # Go implementation
-├── main.go                 # Go CLI
-├── test_apc.py             # 8 robustness tests
-└── examples/               # Benchmarks & demos
+acies/
+  risk.py          Learn-then-Test risk control (the guarantee)          <- start here
+  cascade.py       certified two-stage cascade                            <- and here
+  channel.py       planner over learned perception channels
+  optimal.py       exact optimal policy for the binary model (lower bound)
+  selector.py      contextual resolution selector (experimental)
+  controller.py    classic controller + simulator (legacy, worse on real data)
+  belief.py  clarity_learner.py  safety.py  conviction.py  actions.py
+  change_point.py  BOCPD (does not fire, see STATUS.md)      multiclass.py  accelerator.py
+benchmarks/        real benchmark: measurement, evaluators, certified evaluation, results
+cpp/  core.go  main.go     C++ primitives, Go simulator port
+test_*.py          test_risk, test_cascade, test_channel, test_control, test_apc
 ```
 
-**Start with `controller.py`** — it's the main loop that connects everything.
+## Ground rules (they exist because we were wrong once)
 
-## Development Rules
+1. **Compare against the strong baseline**: fixed resolution *and* a tuned two-stage cascade.
+2. **Keep calibration, certification and test disjoint.**
+3. **Measure costs on the target runtime, in one session, on the same images.**
+4. **Report negative results** with the evidence.
+5. **No claim without an interval** (paired bootstrap, or an exact binomial test for guarantees).
+6. **Never commit model weights or datasets** (Ultralytics weights are AGPL-3.0; this repo is MIT).
+7. A PR that changes an algorithm needs a test that would fail without the change.
+8. The core stays dependency-free (pure Python); benchmark scripts may use numpy / Ultralytics.
 
-1. **No external dependencies** — Python code uses stdlib only
-2. **Run tests before submitting** — `python3 test_apc.py` must pass
-3. **Follow existing code style** — PEP 8 (Python), gofmt (Go), Google C++ Style
-4. **One PR = one feature/fix** — keep changes focused
-5. **Add tests** for new functionality
+## Pull requests
 
-## Pull Request Process
+Fork, branch, `python3 -m pytest -q test_apc.py test_control.py test_channel.py test_risk.py test_cascade.py`, then open a PR
+using the template. Keep commits focused, with messages that say *why*.
 
-1. Fork the repo
-2. Create a branch: `git checkout -b feature/my-feature`
-3. Make changes
-4. Run tests: `python3 test_apc.py`
-5. Commit with clear message: `git commit -m "feat: add brightness action"`
-6. Push and open a PR
+## Questions
 
-**PR title format:** `feat:`, `fix:`, `docs:`, `test:`, `refactor:`
-
-## Questions?
-
-Open a [GitHub Discussion](https://github.com/NICE-DEV226/ACIES/discussions) or ping us on Discord (link in README).
-
-## License
-
-By contributing, you agree that your contributions will be licensed under MIT.
+Open an issue. Maintainer: [@NICE-DEV226](https://github.com/NICE-DEV226).
