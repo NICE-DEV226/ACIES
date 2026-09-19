@@ -386,3 +386,56 @@ frontier(acts, clarity, hw, [200, 1000, 3000])              # (λ, evaluation) p
 
 `error_cost` (λ) is the price of one wrong decision in cost units. `python3 examples/optimal_gap.py`
 compares `APCController` with this frontier.
+
+
+---
+
+## Risk control (`acies.risk`)
+
+Finite-sample guarantees for any accelerated system, following Learn-then-Test (Angelopoulos et al., 2021).
+A setting is *certified* when a valid p-value rejects "its risk exceeds alpha"; with probability >= 1 - delta
+**every** certified setting has risk <= alpha.
+
+```python
+from acies.risk import certify, certify_pvalues, risk_pvalue
+
+# losses[i][j] in [0, 1]: loss of setting j on calibration input i, e.g. 1[answer != reference answer]
+cert = certify(losses, alpha=0.02, delta=0.1, order=safest_first)   # order fixed WITHOUT looking at `losses`
+best = cert.best(cost_per_setting)                                  # cheapest certified setting, or None
+```
+
+| Function | Description |
+|---|---|
+| `certify(losses, alpha, delta, order, method)` | fixed-sequence (default) or Bonferroni selection from a loss matrix |
+| `certify_pvalues(pvalues, delta, order, method)` | same from precomputed p-values (e.g. `max(p_miss, p_fa)` for a conjunction of constraints) |
+| `risk_pvalue(losses, alpha)` | exact binomial p-value for 0/1 losses, Hoeffding-Bentkus for losses in [0, 1] |
+| `binom_cdf`, `binary_pvalue`, `hb_pvalue` | the building blocks |
+
+Requirements: calibration and deployment inputs exchangeable; the order/grid and everything fitted (channels,
+predictors) must not depend on the calibration losses. The bound is data hungry: certifying a 5 % rate needs at
+least 45 calibration events with no failure at delta = 0.1.
+
+## Certified cascade (`acies.cascade`)
+
+A two-stage cascade (cheap pass, then the reference only when unsure) whose thresholds carry a guarantee.
+
+```python
+from acies.cascade import CascadeSample, Ladder, calibrate_cascade, calibrate_ladders
+
+cal = calibrate_cascade(train, cert, costs=(31.0, 96.0), risk="disagree", eps=0.02, delta=0.1)
+answer, escalated = cal.run(first_score, second=lambda: reference_answer())   # `second` is called only if needed
+```
+
+| `risk` | Guarantee (probability >= 1 - delta) |
+|---|---|
+| `"disagree"` | P(answer != reference) <= `eps` |
+| `"conditional"` | P(answer = 0 \| reference = 1) <= `eps_miss` **and** P(answer = 1 \| reference = 0) <= `eps_fa` |
+
+`calibrate_ladders([Ladder(...), ...])` puts several candidate first stages in one test sequence at no cost in
+guarantee. If nothing can be certified, `cal.certified` is `False` and `run` always calls the second stage.
+
+## Asymmetric costs (`acies.channel`)
+
+`ChannelConfig(miss_cost=rho)`: a missed positive costs `rho` times a false alarm; the decision threshold becomes
+`1 / (1 + rho)` and the plan accounts for it. `first_action=i` forces the first action (others may need its output);
+`ChannelController.observe(action, outcome, belief=b)` accepts an external calibrated belief.

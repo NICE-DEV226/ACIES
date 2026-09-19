@@ -32,6 +32,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `test_control.py` (24 tests): emergency regression, optimal policy (closed form, Monte
   Carlo cross-check, monotone frontier, lower-bound property), step API lifecycle.
 
+### Added (certified acceleration)
+- **`acies.risk`**: Learn-then-Test risk control, pure Python. Exact binomial p-values (Hoeffding-Bentkus for
+  losses in [0, 1]), fixed-sequence and Bonferroni family-wise control, `certify_pvalues` for conjunctions
+  (intersection-union). The guarantee is checked empirically in tests: a naive "empirical risk <= eps" rule violates the
+  bound in 39 % of simulated calibration sets, Learn-then-Test in 3 % (target <= 10 %).
+- **`acies.cascade`**: a two-stage cascade calibrated with a guarantee, no labels needed
+  (`risk="disagree"` or `"conditional"` for misses / false alarms), several candidate first stages in one test sequence.
+  On YOLOv8n / COCO (8 classes x 4 splits): 60 % of compute saved at a guaranteed disagreement <= 2 %,
+  31 % at misses <= 10 % and false alarms <= 3 %; 0 significant violations in 32 splits per row.
+- `ChannelConfig(miss_cost=rho)` (asymmetric costs), `first_action`, and an external belief on `observe(..., belief=)`.
+- `benchmarks/certified_eval.py`, `certified_cascade_demo.py`, `measure_zoom*.py`; negative results (planner < cascade,
+  zoom, context, mAP selection) documented in `benchmarks/README.md`.
+- `test_risk.py` (20 tests) and `test_cascade.py` (9 tests).
+
 ### Added (real-perception work)
 - **`acies.channel`**: `ChannelController` + `ChannelLearner`. Each action is a *channel*
   P(outcome | class, action) learned from labelled examples (quantised model output, not a 0/1

@@ -51,6 +51,44 @@ YOLOv8n: reaching Fixed 640's mAP costs 101–124 ms vs 84 ms. YOLOv8n's mAP sat
 so the first pass (22–40 ms) eats the saving. An oracle that knows the ground truth could save
 ~60 % — the gap is a prediction problem, not a lack of headroom.
 
+## Result 3 — certified operation (the guarantee)
+
+`certified_eval.py` / `certified_cascade_demo.py`: every method is calibrated on a *certification* split with
+Learn-then-Test (`acies.risk`) against the decision of the 640 px system (no labels). 8 classes x 4 random splits
+of the 3000 images (train / cert / test thirds), delta = 10 %. A violation counts only when the test risk is
+*significantly* above the tolerance (exact binomial test, 5 %). Costs: full-frame and crop passes timed in
+one session (640 px = 96 ms), because costs measured in different sessions differed by up to 40 %.
+
+Certified cascade (first stage among 160/224/320/416 px, reference 640 px):
+
+| Guarantee | Certified splits | Saving | Test miss / false alarm | Violations |
+|---|:--:|:--:|:--:|:--:|
+| disagreement <= 2 % | 97 % | 60 % | 16.9 % / 0.25 % | 0 / 32 |
+| disagreement <= 3 % | 100 % | 73 % | 30.6 % / 0.28 % | 0 / 32 |
+| misses <= 10 %, false alarms <= 3 % | 66 % | 31 % | 2.9 % / 0.34 % | 0 / 32 |
+| misses <= 5 %, false alarms <= 2 % | 34 % | 12 % | 0.7 % / 0.10 % | 0 / 32 |
+
+The disagreement guarantee is true but weak for alerts (miss rate up to 31 % on rare classes). Same conditional
+guarantees, other methods (saving at 10 %/3 % and 5 %/2 %): cascade 31 % / 12 %; channel planner 11 % / 1 %;
+planner with asymmetric loss 8 % / 4 % (certified in 56 % / 22 % of splits); planner with a learned context belief
+10 % / 2 %; Dynamic-Resolution-style predictor (no retraining) 12 % / 0 %. Zero significant violations for every
+method. Certifying a 5 % miss rate needs >= 45 calibration positives with no miss (`acies.risk`).
+
+## Result 4 — what did not help
+
+- **Headroom is large but is a prediction problem.** An oracle that knows each resolution's answer and picks the
+  cheapest that reproduces the reference would save 85 %; the best certified controllers reach 31-73 %.
+- **Scene context** (boosted trees on all-class detection statistics and image sharpness) predicts safe negatives of
+  rare classes at 99 % precision on 30-60 % of images in isolation, but as the initial belief of the planner it added
+  nothing end to end.
+- **Region-of-interest zoom** (crop around the most plausible box of a 224 px pass, 26-32 ms vs 96 ms): information
+  per millisecond comparable to a 320 px full pass (0.20 vs 0.21 accuracy points per 100 ms on `person`); a
+  hand-designed zoom cascade could not be certified in a preliminary two-class run.
+- **mAP50-95:** on 3000 images, matching Fixed 640's mAP (34.87) costs 114 ms with a cascade and 99 ms with the best
+  selector vs 84 ms for Fixed 640; only an oracle does better (36.4 at 77 ms).
+- **Outcome quantisation must contain the reference's decision boundary** (a bin edge at 0.25); otherwise no
+  channel can reproduce the reference and the planner cannot be certified at 1 %.
+
 ## Limits
 One detector (YOLOv8n), one machine (CPU), 1500 test images per class (accuracy s.e. ≈ 0.6 pt),
 binary presence decisions only, COCO val2017. YOLO26 and GPU/edge cost ratios are not measured.

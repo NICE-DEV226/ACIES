@@ -14,7 +14,7 @@ which resolution to run, whether to look again — to reach a reliable decision 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![Go 1.22+](https://img.shields.io/badge/go-1.22+-00ADD8.svg?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
-[![Tests](https://img.shields.io/badge/tests-52%20passed-brightgreen.svg?style=for-the-badge)](#testing)
+[![Tests](https://img.shields.io/badge/tests-86%20passed-brightgreen.svg?style=for-the-badge)](#testing)
 [![Benchmark](https://img.shields.io/badge/benchmark-YOLOv8n%20on%20COCO-ff6f00.svg?style=for-the-badge)](benchmarks/README.md)
 
 <br>
@@ -34,30 +34,34 @@ tells it, and spends the next unit of compute only where it is expected to be wo
 
 ## Does it work? Measured on real YOLO output
 
-Task: *"is there a `<class>` in the image?"* — YOLOv8n, COCO val2017, 1500 held-out test images per
-class, cost = measured CPU latency. Every setting is chosen on a separate calibration half; the
-test half is measured once ([full protocol and per-class table](benchmarks/README.md)).
+Task: *"is there a `<class>` in the image?"* — YOLOv8n on COCO val2017, 8 classes, cost = measured CPU
+latency (640 px = 96 ms). The reference is the same decision at 640 px; **no labels are used**. Settings are
+chosen on separate splits and every number is measured on inputs the method never saw
+([protocol and tables](benchmarks/README.md)).
 
-| | Accuracy (mean of 8 classes) | Cost |
-|---|:--:|:--:|
-| YOLO at fixed 640 px | 96.1 % | 84 ms |
-| **ACIES v2** (`acies.channel`) | 95.9 % | **51 ms (−40 %)** |
-| Plain 2-stage confidence cascade | 95.6 % | 36 ms (−57 %) |
-| Original controller (v1) | ~92 % | ~71 ms |
+**What works: a cascade with a guarantee** (`acies.cascade`, built on `acies.risk`). Learn-then-Test
+turns "the thresholds look fine on a validation set" into "with probability ≥ 90 %, the accelerated system
+stays within ε of the full one" — checked on 32 random splits per row:
+
+| Guarantee you ask for | Certified splits | Compute saved | Significant violations |
+|---|:--:|:--:|:--:|
+| disagreement with the 640 px decision ≤ 2 % | 97 % | **60 %** | 0 / 32 |
+| disagreement ≤ 3 % | 100 % | **73 %** | 0 / 32 |
+| misses ≤ 10 % **and** false alarms ≤ 3 % | 66 % | 31 % | 0 / 32 |
+| misses ≤ 5 % **and** false alarms ≤ 2 % | 34 % | 12 % | 0 / 32 |
 
 **Read this honestly.**
 
-- The original controller (v1) was **worse than fixed-resolution YOLO on every class**. v2 fixes
-  the causes (see below) and gains ≈ +4 accuracy points at ≈ −28 % cost over v1.
-- Against fixed 640 px, v2 saves ~40 % of the compute for −0.2 point on average. It **loses
-  significantly on `person`** (−1.3 pt, 95 % CI [−2.3, −0.4]) and is borderline on `cup`; on the
-  other classes the difference is within noise.
-- **A simple two-stage cascade is as good on the cost/accuracy frontier.** ACIES's value is
-  generality — one knob, no hand-set thresholds, soft evidence, a plan — not a win over a
-  well-tuned cascade.
-- **No gain on detection quality (mAP).** A selector that spends one cheap pass to choose the
-  resolution does not beat fixed-resolution YOLOv8n on mAP50-95: the first pass eats the saving.
-  ACIES helps **decisions** (presence, alerts, counting thresholds), not full detection.
+- The disagreement guarantee is true but **weak for alerts**: for rare classes the miss rate reached 17–31 %,
+  because errors on rare positives hide behind the many negatives. Use the conditional guarantee (misses /
+  false alarms) for alerting; it certifies less often and saves less.
+- A guarantee needs data: certifying a 5 % miss rate needs ≥ 45 calibration positives with no miss. Rare
+  classes with few examples are not certified, and the honest answer is then *"no saving proven"* — the reference
+  keeps running.
+- **A planner is not better than a cascade.** The channel planner (`acies.channel`) reaches the same guarantee
+  but saves less (11 % / 1 % symmetric, 8 % / 4 % asymmetric, vs 31 % / 12 % for the cascade). Region zoom, learned
+  scene context and mAP-oriented resolution selection **did not help** either (details in the benchmarks).
+- The original controller (v1) was worse than fixed-resolution YOLO on every class.
 - One detector, one CPU, binary decisions. GPU/edge cost ratios and other detectors are not measured.
 
 ---
@@ -67,10 +71,29 @@ test half is measured once ([full protocol and per-class table](benchmarks/READM
 ```bash
 git clone https://github.com/NICE-DEV226/ACIES.git && cd ACIES
 pip install -e ".[dev]"        # the core is pure Python, no dependencies
-python3 -m pytest -q test_apc.py test_control.py test_channel.py
+python3 -m pytest -q test_apc.py test_control.py test_channel.py test_risk.py test_cascade.py
 ```
 
-### Deployment — the channel controller
+### Deployment with a guarantee — the certified cascade
+
+```python
+from acies.cascade import CascadeSample, Ladder, calibrate_ladders
+
+# offline, on YOLO's own outputs (no labels): first-stage score = top confidence of the class at a cheap size;
+# second = reference answer at 640 px. `train` and `cert` are disjoint sets of inputs.
+lad = lambda r: Ladder(CascadeSample(score_train[r], ref_train, ref_train),
+                       CascadeSample(score_cert[r],  ref_cert,  ref_cert), (latency[r], latency[640]), name=str(r))
+cal = calibrate_ladders([lad(160), lad(224), lad(320)], risk="conditional", eps_miss=0.10, eps_fa=0.03, delta=0.1)
+
+if cal.certified:                                    # else: nothing proven, keep running the reference
+    answer, escalated = cal.run(first_score, second=lambda: run_640_and_decide())
+```
+
+`risk="disagree"` bounds the fraction of inputs whose answer differs from the reference; `"conditional"` bounds
+the miss rate and the false-alarm rate separately. Requirements: calibration and deployment inputs exchangeable,
+and `train` / `cert` disjoint. See [docs/python-api.md](docs/python-api.md) (`acies.risk`, `acies.cascade`).
+
+### The planner over channels (`acies.channel`)
 
 Each action is a *channel*: the model's output is quantised into a few outcomes (e.g. bins of the
 top detection confidence) and ACIES learns `P(outcome | class, action)` from labelled examples.
@@ -154,11 +177,12 @@ sizes, and `ClarityLearner` owns a raw pointer without a copy constructor.
 ## Testing
 
 ```bash
-python3 -m pytest -q test_apc.py test_control.py test_channel.py     # 52 tests
+python3 -m pytest -q test_apc.py test_control.py test_channel.py test_risk.py test_cascade.py     # 86 tests
 ```
 
-Highlights: equivalence of the channel model with the binary Bayes update when K = 2; a synthetic
-environment where planning beats greedy by ~25 %; the optimal policy cross-checked by Monte Carlo
+Highlights: the risk-control guarantee is checked empirically (a naive "empirical risk ≤ ε" rule violates the bound in
+39 % of simulated calibration sets, Learn-then-Test in 3 %); equivalence of the channel model with the binary Bayes update
+when K = 2; a synthetic environment where planning beats greedy by ~25 %; the optimal policy cross-checked by Monte Carlo
 against the real `BeliefState`; regression tests for the emergency-override defect.
 
 ## Reproducing the benchmarks
@@ -166,7 +190,8 @@ against the real `BeliefState`; regression tests for the emergency-override defe
 ```bash
 python3 benchmarks/coco_subset.py --n 3000 --seed 0
 python3 benchmarks/measure.py --weights yolov8n.pt --subset ~/.cache/acies-bench/coco/subset_3000_0.json
-python3 benchmarks/final_eval.py --measure <measure_*.pkl> --subset <subset_*.json>
+python3 benchmarks/certified_cascade_demo.py --measure <measure_*.pkl> --subset <subset_*.json> --latency-json benchmarks/results/latency_single_session.json
+python3 benchmarks/certified_eval.py --mode conditional ...   # all methods under the same certified protocol
 ```
 
 Model weights are Ultralytics (AGPL-3.0) and are not distributed with this repository.
@@ -176,7 +201,9 @@ Model weights are Ultralytics (AGPL-3.0) and are not distributed with this repos
 ```
 ACIES/
 ├── acies/                  # Python package
-│   ├── channel.py          # channel controller (deployment)        ← recommended
+│   ├── risk.py             # Learn-then-Test risk control (the guarantee)
+│   ├── cascade.py          # certified two-stage cascade            ← recommended
+│   ├── channel.py          # planner over learned channels
 │   ├── optimal.py          # exact optimal policy (binary model)
 │   ├── selector.py         # contextual resolution selector (experimental)
 │   ├── controller.py       # classic controller + simulator
@@ -186,7 +213,7 @@ ACIES/
 ├── benchmarks/             # real benchmark on COCO + YOLO (protocol, results)
 ├── cpp/                    # C++ belief/learner primitives
 ├── core.go  main.go        # Go port of the classic simulator + CLI
-├── test_apc.py  test_control.py  test_channel.py
+├── test_apc.py  test_control.py  test_channel.py  test_risk.py  test_cascade.py
 ├── examples/  docs/  paper/  assets/
 └── Dockerfile  Makefile
 ```

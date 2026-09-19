@@ -23,21 +23,22 @@ as Sequential Decision-Making over Perception Channels}}
 \maketitle
 
 \begin{abstract}
-Deployed vision systems usually run their model at one fixed resolution, although many inputs
-could be decided at a fraction of the cost. We treat the choice of how much perception to spend on
-an input as a sequential decision problem. Each perception action (a resolution) is modelled as a
-\emph{channel}: the quantised output of the model has a class-conditional distribution learned from
-labelled examples. A controller keeps a belief about the decision and, by dynamic programming over
-that belief, runs the next action only when its expected error reduction, priced by a single
-parameter, exceeds its computational cost. We evaluate on real detections of YOLOv8n on COCO
-val2017 with measured latency and an honest protocol (all settings chosen on a calibration split,
-paired-bootstrap intervals on a held-out split). On the decision ``is there an object of class $c$
-in the image?'' the controller uses 40\% less compute than fixed 640\,px inference for 0.2
-accuracy points less on average over eight classes. Our first formulation, which described each
-action by one independent ``clarity'' number, was \emph{worse than fixed-resolution inference on
-every class}; we explain why. We also report two negative results: a simple two-stage confidence
-cascade matches the cost/accuracy frontier, and no per-image resolution selector we tried improves
-detection mAP over fixed-resolution YOLOv8n.
+Running a perception model at one fixed resolution wastes compute on inputs that a cheaper pass
+would settle. Cascades cut that cost, but their thresholds are tuned until accuracy ``looks fine'',
+with no promise about how far the accelerated system can stray from the full one. We treat the
+problem as sequential decision-making over perception \emph{channels} (each action's quantised
+output has a class-conditional distribution learned from data; a dynamic-programming plan runs the
+next action only when its expected error reduction, priced by one parameter, exceeds its cost) and,
+more usefully, we make the accelerated system \emph{certifiable}: with Learn-then-Test risk control
+the settings of a cascade or of the planner come with a finite-sample guarantee against the
+full-resolution decision, without labels. On real YOLOv8n detections (COCO val2017, eight classes,
+measured latency), a certified two-stage cascade saves 60\% of the compute of 640\,px inference
+at a guaranteed disagreement of at most 2\%, and 31\% while bounding missed detections to 10\% and
+false alarms to 3\%; the guarantee held in every one of 32 random splits. We also report what did
+not work: the channel planner does not beat a well-tuned cascade, region-of-interest zoom and
+learned scene context add nothing, and no per-image resolution selector improves detection mAP.
+An earlier formulation, one independent ``clarity'' number per action, was worse than fixed
+resolution on every class; we explain why.
 \end{abstract}
 
 % ============================================================
@@ -50,14 +51,16 @@ costs compute too. We ask when a controller can profit from deciding it online.
 
 \textbf{Contributions.}
 \begin{itemize}
-  \item A formulation in which each perception action is a learned channel
-  $P(\text{outcome}\mid Y,a)$ over a quantised model output, replacing a scalar ``clarity'', and a
-  planner that trades expected error against measured cost (\Cref{sec:method}).
-  \item A diagnosis, with measurements, of why the scalar-clarity formulation fails on real
-  perception: repeated deterministic observations counted as independent, hard $0/1$ votes, and a
-  safety override that fired on the uninformed prior (\Cref{sec:failure}).
-  \item A reproducible real-model evaluation with a calibration/test protocol and confidence
-  intervals, including negative results (\Cref{sec:experiments}).
+  \item A finite-sample, label-free guarantee for accelerating a black-box perception model with
+  cheaper \emph{input} actions: Learn-then-Test applied to the disagreement with the full system,
+  or to missed detections and false alarms separately, with an intersection-union test for the
+  conjunction (\Cref{sec:certified}). A certified cascade needs no hand-tuned thresholds and is
+  validated on real detections.
+  \item A planner over learned perception channels with asymmetric error costs (\Cref{sec:method}),
+  and an honest comparison showing it does \emph{not} beat a tuned cascade (\Cref{sec:experiments}).
+  \item A diagnosis, with measurements, of why the scalar-clarity formulation fails on real perception
+  (\Cref{sec:failure}), and negative results for region zoom, scene context and mAP-oriented resolution
+  selection.
 \end{itemize}
 
 % ============================================================
@@ -76,6 +79,15 @@ training time; we choose actions at inference time from measured costs.
 learns action quality online; we learn channels offline with Dirichlet posteriors and fit a
 single evidence-discount parameter on held-out data, in the spirit of calibration
 \cite{guo2017calibration}.
+
+\textbf{Risk-controlled acceleration.} Learn-then-Test \cite{angelopoulos2021learn} turns risk
+control into multiple hypothesis testing. It has been used to calibrate the exits of language models
+\cite{schuster2022confident} and of early-exit networks \cite{jazbec2024fast}, where the model can
+be modified. We apply it to black-box models driven through cheaper \emph{input} actions.
+\textbf{Resolution and zoom.} Dynamic Resolution Networks \cite{zhu2021dynamic} predict the
+smallest sufficient resolution but retrain the classifier; zoom detectors such as AdaZoom
+\cite{xu2021adazoom} crop regions of high-resolution scenes. We evaluate both ideas as baselines
+without retraining.
 
 \textbf{Change-point detection.} Bayesian online change-point detection \cite{adams2007bayesian}
 was part of an earlier version of the controller. With a constant hazard rate $h$ the posterior
@@ -132,6 +144,37 @@ the plan attains 25\% lower expected objective (cost plus $\lambda\times$error) 
 For the binary-symmetric model with independent observations, the same recursion with $M=2$
 and repeated actions allowed gives the exact optimal stopping policy; we use it as a lower bound
 on cost against which any controller in that model can be measured (\texttt{acies.optimal}).
+
+% ============================================================
+\section{Certified operation}
+\label{sec:certified}
+
+\textbf{Risk.} The reference system is the full-cost pass (here 640\,px). For a setting $\theta$
+(a cascade's thresholds, or the planner's $\lambda$ and cost ratio $\rho$) and an input $x$, let
+$\ell(x;\theta)=\mathbf 1[\hat Y_\theta(x)\ne\hat Y_{\mathrm{ref}}(x)]$. Then
+$\mathrm{acc}(\theta)\ge\mathrm{acc}_{\mathrm{ref}}-R(\theta)$ with $R=\mathbb E\,\ell$, and no
+label is needed: the reference labels the calibration data. Because a rare event is dominated by
+negatives, we also bound the miss rate $P(\hat Y_\theta{=}0\mid \hat Y_{\mathrm{ref}}{=}1)$ and the false-alarm
+rate $P(\hat Y_\theta{=}1\mid \hat Y_{\mathrm{ref}}{=}0)$ separately.
+
+\textbf{Test.} For each setting we test $H_\theta: R(\theta)>\alpha$ with the exact binomial p-value
+$P(\mathrm{Bin}(n,\alpha)\le k)$ ($k$ observed bad calibration inputs among $n$), valid for 0/1 losses; a
+Hoeffding--Bentkus p-value handles losses in $[0,1]$. For a conjunction of two constraints we take the
+maximum of the two p-values (intersection-union test), valid whatever their dependence. Family-wise error is
+controlled by fixed-sequence testing: settings are tested in an order fixed \emph{before} looking at the
+calibration losses (from safest to riskiest on an independent training split), stopping at the first that fails.
+With probability at least $1-\delta$ every certified setting has risk at most $\alpha$; the cheapest is deployed.
+Several candidate first stages enter one sequence at no cost in guarantee.
+
+\textbf{Requirements and price.} Calibration and deployment inputs must be exchangeable, and everything fitted
+(channels, predictors, the testing order) must use data independent of the calibration split. The guarantee is
+finite-sample and therefore data hungry: certifying a miss rate of 5\% needs at least 45 calibration positives
+with no miss at $\delta{=}0.1$ (77 if one miss is tolerated), so rare classes cannot be certified without more data,
+and the honest output is then ``no saving proven'': the reference keeps running.
+
+\textbf{Why a naive rule fails.} Selecting the cheapest setting whose \emph{empirical} risk is below the target
+violated the bound in 39\% of simulated calibration sets, against 3.1\% for the certified procedure at
+$\delta{=}0.1$; on real data an uncalibrated ``within 0.3 points on calibration'' rule lost 1.3 points on \emph{person}.
 
 % ============================================================
 \section{Why the scalar-clarity formulation fails}
@@ -218,6 +261,49 @@ bench  & 96.7\% / 84\,ms & 96.2\% / 41\,ms & $-0.53$ [$-1.27$, $+0.20$] & 96.1\%
 For \emph{bottle} the calibration rule selected the largest price in the grid and the controller
 saved nothing (86\,ms): the rule can fail to find a cheaper setting.
 
+\subsection{Certified results}
+\label{sec:certres}
+We repeat the following on eight classes with four random splits of the 3000 images into training,
+certification and test thirds (1000 each), $\delta{=}0.1$. A \emph{significant} violation is a test risk
+that an exact binomial test (5\%) finds above the tolerance, so that test-sample noise is not counted as
+a failed guarantee. Costs in this subsection come from full-frame and crop passes timed in \emph{one} session
+(640\,px: 96\,ms), since costs measured in different sessions differed by up to 40\% on this machine.
+
+\begin{table}[h]
+\centering
+\caption{Certified two-stage cascade (first stage chosen among 160/224/320/416\,px, reference 640\,px).
+Mean over 8 classes $\times$ 4 splits.}
+\label{tab:cert}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Guarantee} & \textbf{Certified} & \textbf{Saving} & \textbf{Test miss / FA} & \textbf{Violations} \\
+\midrule
+disagreement $\le 2\%$ & 97\% & 60\% & 16.9\% / 0.25\% & 0/32 \\
+disagreement $\le 3\%$ & 100\% & 73\% & 30.6\% / 0.28\% & 0/32 \\
+miss $\le 10\%$, FA $\le 3\%$ & 66\% & 31\% & 2.9\% / 0.34\% & 0/32 \\
+miss $\le 5\%$, FA $\le 2\%$ & 34\% & 12\% & 0.7\% / 0.10\% & 0/32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The disagreement guarantee is true but weak for alerting: the miss rate reaches 17--31\% because errors on
+the rare positives hide behind the many negatives; the conditional guarantee bounds it directly, at the price
+of fewer certified splits. Under the conditional guarantees the alternatives saved:
+cascade 31\%/12\%, channel planner with symmetric loss 11\%/1\%, with asymmetric loss (miss cost $\rho\in[0.1,4]$)
+8\%/4\% and 56\%/22\% of splits certified, a context-conditioned planner 10\%/2\%, and a Dynamic-Resolution-style
+predictor (no retraining) 12\%/0\%. No method had a significant violation in 32 splits.
+
+\textbf{Headroom.} An oracle that knows every resolution's answer and picks the cheapest that reproduces the
+reference would save 85\%, so the gap to the certified 31--73\% is a prediction problem. We tried to close it:
+(i) a boosted-tree model of the cheap pass's whole-image detection statistics and image sharpness, used as the
+initial belief, added nothing end to end (although it certifies safe negatives of rare classes at 99\% precision on
+30--60\% of images in isolation); (ii) region-of-interest zoom, a crop around the most plausible box of the cheap
+pass (26--32\,ms against 96\,ms), reproduces the reference about as well as a 320\,px full pass per millisecond
+(0.20 versus 0.21 accuracy points per 100\,ms on \emph{person}); in a preliminary run on two classes a hand-designed zoom cascade could not be certified;
+(iii) the asymmetric loss helped the planner get certified more often but not beat the cascade. A useful lesson from
+the certification itself: the outcome quantisation must contain the reference's own decision boundary, or no channel can reproduce
+it (the planner could not be certified at 1\% until a bin edge was placed at 0.25).
+
 \subsection{Negative result: detection quality}
 We also asked whether a per-image resolution choice improves mean average precision (mAP50-95).
 A selector spends one cheap pass, extracts label-free features of the detections (counts, confidence
@@ -250,11 +336,12 @@ weights are not redistributed.
 
 % ============================================================
 \section{Conclusion}
-Controlling perception per input is worth doing when the perception model's output is used as
-evidence and the controller plans its escalation, and not worth it when it is described by one
-independent number per action. On YOLOv8n it saves about 40\% of the compute for a decision
-with a small accuracy cost, but a tuned cascade does as well, and it does not improve detection
-mAP. We release the negative results with the evidence.
+Accelerating a black-box perception model per input is worth doing, and it can be certified. On YOLOv8n,
+a cascade whose thresholds are calibrated with Learn-then-Test saves 60\% of the compute of the reference at a
+guaranteed disagreement of 2\%, or 31\% while bounding missed detections to 10\%; a planner over learned channels
+reaches part of that, and describing an action by one independent number is worse than not adapting at all.
+Region zoom, scene context and mAP-oriented selection did not help. The promise, not the planner, is the contribution
+that changes practice; we release the negative results with the evidence.
 
 \bibliographystyle{plain}
 \bibliography{references}
