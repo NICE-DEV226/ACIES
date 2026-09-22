@@ -2,12 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"math"
 	"math/rand"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -54,13 +54,16 @@ Examples:
 // ============================================================
 
 func cmdRun() {
-	fs := NewFlagSet("run")
-	hardware := fs.String("hardware", "default", "Hardware profile (default/jetson/rpi/gpu/tpu)")
-	threshold := fs.Float64("threshold", 0.95, "Confidence threshold")
-	maxSteps := fs.Int("max-steps", 6, "Maximum perception steps")
-	verbose := fs.Bool("verbose", false, "Verbose output")
-	difficulty := fs.Float64("difficulty", 0.0, "Task difficulty (0=easy, 1=impossible)")
-	fs.Parse(os.Args[2:])
+	fs := newRunFlags()
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(2)
+	}
+	hardware := fs.hardware
+	threshold := fs.threshold
+	maxSteps := fs.maxSteps
+	verbose := fs.verbose
+	difficulty := fs.difficulty
 
 	profile, ok := HardwareProfiles()[*hardware]
 	if !ok {
@@ -118,11 +121,14 @@ func cmdRun() {
 // ============================================================
 
 func cmdBench() {
-	fs := NewFlagSet("bench")
-	hardware := fs.String("hardware", "default", "Hardware profile")
-	iterations := fs.Int("iterations", 1000, "Number of iterations")
-	threshold := fs.Float64("threshold", 0.95, "Confidence threshold")
-	fs.Parse(os.Args[2:])
+	fs := newBenchFlags()
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(2)
+	}
+	hardware := fs.hardware
+	iterations := fs.iterations
+	threshold := fs.threshold
 
 	profile, ok := HardwareProfiles()[*hardware]
 	if !ok {
@@ -186,9 +192,9 @@ func cmdBench() {
 	fmt.Printf("Time:        %s (%.0f runs/sec)\n", elapsed.Truncate(time.Millisecond), runsPerSec)
 
 	// Comparison: always 1024p
-	cost1024 := float64(200) * profile.LatencyScale * profile.LatencyWeight +
-		float64(140) * profile.EnergyScale * profile.EnergyWeight +
-		float64(256) * profile.MemoryScale * profile.MemoryWeight
+	cost1024 := float64(200)*profile.LatencyScale*profile.LatencyWeight +
+		float64(140)*profile.EnergyScale*profile.EnergyWeight +
+		float64(256)*profile.MemoryScale*profile.MemoryWeight
 	savings := (1.0 - avgCost/cost1024) * 100
 
 	fmt.Printf("\nvs Fixed 1024p (cost=%.0f): ", cost1024)
@@ -235,78 +241,52 @@ func boolStr(b bool, trueStr, falseStr string) string {
 }
 
 // Minimal flag set (no external deps)
-type FlagSet struct {
-	name    string
-	args    []string
-	strs    map[string]*string
-	floats  map[string]*float64
-	ints    map[string]*int
-	bools   map[string]*bool
+// ============================================================
+// Flag parsing (standard library)
+// ============================================================
+
+type runFlags struct {
+	fs         *flag.FlagSet
+	hardware   *string
+	threshold  *float64
+	maxSteps   *int
+	verbose    *bool
+	difficulty *float64
 }
 
-func NewFlagSet(name string) *FlagSet {
-	return &FlagSet{
-		name:   name,
-		strs:   make(map[string]*string),
-		floats: make(map[string]*float64),
-		ints:   make(map[string]*int),
-		bools:  make(map[string]*bool),
-	}
+func newRunFlags() *runFlags {
+	fs := flag.NewFlagSet("run", flag.ContinueOnError)
+	r := &runFlags{fs: fs}
+	r.hardware = fs.String("hardware", "default", "Hardware profile (default/jetson/rpi/gpu/tpu)")
+	r.threshold = fs.Float64("threshold", 0.95, "Confidence threshold")
+	r.maxSteps = fs.Int("max-steps", 6, "Maximum perception steps")
+	r.verbose = fs.Bool("verbose", false, "Verbose output")
+	r.difficulty = fs.Float64("difficulty", 0.0, "Task difficulty (0=easy, 1=impossible)")
+	return r
 }
 
-func (fs *FlagSet) String(name, value, usage string) *string {
-	fs.strs[name] = &value
-	return fs.strs[name]
+func (r *runFlags) Parse(args []string) error {
+	return r.fs.Parse(args)
 }
 
-func (fs *FlagSet) Float64(name string, value float64, usage string) *float64 {
-	fs.floats[name] = &value
-	return fs.floats[name]
+type benchFlags struct {
+	fs         *flag.FlagSet
+	hardware   *string
+	iterations *int
+	threshold  *float64
 }
 
-func (fs *FlagSet) Int(name string, value int, usage string) *int {
-	fs.ints[name] = &value
-	return fs.ints[name]
+func newBenchFlags() *benchFlags {
+	fs := flag.NewFlagSet("bench", flag.ContinueOnError)
+	b := &benchFlags{fs: fs}
+	b.hardware = fs.String("hardware", "default", "Hardware profile")
+	b.iterations = fs.Int("iterations", 1000, "Number of iterations")
+	b.threshold = fs.Float64("threshold", 0.95, "Confidence threshold")
+	return b
 }
 
-func (fs *FlagSet) Bool(name string, value bool, usage string) *bool {
-	fs.bools[name] = &value
-	return fs.bools[name]
-}
-
-func (fs *FlagSet) Parse(args []string) {
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		if !strings.HasPrefix(arg, "--") {
-			continue
-		}
-		key := strings.TrimPrefix(arg, "--")
-		parts := strings.SplitN(key, "=", 2)
-		if len(parts) == 1 && i+1 < len(args) {
-			parts = append(parts, args[i+1])
-			i++
-		}
-		if len(parts) != 2 {
-			continue
-		}
-		k, v := parts[0], parts[1]
-
-		if s, ok := fs.strs[k]; ok {
-			*s = v
-		} else if f, ok := fs.floats[k]; ok {
-			val, err := strconv.ParseFloat(v, 64)
-			if err == nil {
-				*f = val
-			}
-		} else if n, ok := fs.ints[k]; ok {
-			val, err := strconv.Atoi(v)
-			if err == nil {
-				*n = val
-			}
-		} else if b, ok := fs.bools[k]; ok {
-			*b = v == "true" || v == "1"
-		}
-	}
+func (b *benchFlags) Parse(args []string) error {
+	return b.fs.Parse(args)
 }
 
 func fileExists(path string) bool {
